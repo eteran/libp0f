@@ -1228,7 +1228,7 @@ int main(int argc, char** argv) {
   if (read_file) offline_event_loop(); else live_event_loop();
 
   if (!daemon_mode)
-    SAYF("\nAll done. Processed %llu packets.\n", packet_cnt);
+    SAYF("\nAll done. Processed %lu packets.\n", packet_cnt);
 
 #ifdef DEBUG_BUILD
   destroy_all_hosts();

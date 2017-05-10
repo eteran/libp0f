@@ -29,10 +29,10 @@ set(p0f_SOURCES
 
 add_executable(p0f ${p0f_SOURCES})
 
-#set_property(TARGET p0f PROPERTY C_STANDARD 99)
+set_property(TARGET p0f PROPERTY C_STANDARD 99)
 
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic -W -Wall -Wmissing-field-initializers -Wunused -Wshadow")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 
-add_definitions(-DVERSION="3.09b")
+add_definitions(-DVERSION="3.09b" -DDEBUG_BUILD)
 
 target_link_libraries(p0f pcap)
