@@ -507,11 +507,11 @@ static u8* dump_sig(u8 to_srv, struct http_sig* hsig) {
 
   u8* val;
 
-#define RETF(_par...) do { \
-    s32 _len = snprintf(NULL, 0, _par); \
+#define RETF(...) do { \
+    s32 _len = snprintf(NULL, 0, __VA_ARGS__); \
     if (_len < 0) FATAL("Whoa, snprintf() fails?!"); \
     ret = DFL_ck_realloc_kb(ret, rlen + _len + 1); \
-    snprintf((char*)ret + rlen, _len + 1, _par); \
+    snprintf((char*)ret + rlen, _len + 1, __VA_ARGS__); \
     rlen += _len; \
   } while (0)
     
@@ -822,14 +822,14 @@ header_check:
     if (hdr_diff < -HTTP_MAX_DATE_DIFF || 
         hdr_diff > recv_diff + HTTP_MAX_DATE_DIFF) {
 
-      DEBUG("[#] HTTP 'Date' distance too high (%lld in %lld sec).\n",
+      DEBUG("[#] HTTP 'Date' distance too high (%ld in %ld sec).\n",
              hdr_diff, recv_diff);
       score  += 4;
       reason |= NAT_APP_DATE;
 
     } else {
 
-      DEBUG("[#] HTTP 'Date' distance seems fine (%lld in %lld sec).\n",
+      DEBUG("[#] HTTP 'Date' distance seems fine (%ld in %ld sec).\n",
              hdr_diff, recv_diff);
 
     }
