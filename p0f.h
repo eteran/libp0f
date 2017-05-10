@@ -24,9 +24,9 @@ void start_observation(char* keyword, u8 field_cnt, u8 to_srv,
 
 void add_observation_field(char* key, u8* value);
 
-#define OBSERVF(_key, _fmt...) do { \
+#define OBSERVF(_key, ...) do { \
     u8* _val; \
-    _val = alloc_printf(_fmt); \
+    _val = alloc_printf(__VA_ARGS__); \
     add_observation_field(_key, _val); \
     ck_free(_val); \
   } while (0)
