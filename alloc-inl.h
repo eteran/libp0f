@@ -64,7 +64,7 @@
 
 
 static inline void* DFL_ck_alloc(u32 size) {
-  void* ret;
+  u8* ret;
 
   if (!size) return NULL;
 
@@ -82,22 +82,23 @@ static inline void* DFL_ck_alloc(u32 size) {
 
 
 static inline void* DFL_ck_realloc(void* orig, u32 size) {
-  void* ret;
+  u8* ret;
   u32   old_size = 0;
+  u8* orig_ptr = orig;
 
   if (!size) {
 
-    if (orig) {
+    if (orig_ptr) {
 
-      CHECK_PTR(orig);
+      CHECK_PTR(orig_ptr);
 
       /* Catch pointer issues sooner. */
 
 #ifdef DEBUG_BUILD
-      memset(orig - ALLOC_OFF, 0xFF, ALLOC_S(orig) + ALLOC_OFF);
+      memset(orig_ptr - ALLOC_OFF, 0xFF, ALLOC_S(orig_ptr) + ALLOC_OFF);
 #endif /* DEBUG_BUILD */
 
-      free(orig - ALLOC_OFF);
+      free(orig_ptr - ALLOC_OFF);
 
     }
 
@@ -105,16 +106,16 @@ static inline void* DFL_ck_realloc(void* orig, u32 size) {
 
   }
 
-  if (orig) {
+  if (orig_ptr) {
 
-    CHECK_PTR(orig);
+    CHECK_PTR(orig_ptr);
 
 #ifndef DEBUG_BUILD
-    ALLOC_C(orig) = ALLOC_MAGIC_F;
+    ALLOC_C(orig_ptr) = ALLOC_MAGIC_F;
 #endif /* !DEBUG_BUILD */
 
-    old_size = ALLOC_S(orig);
-    orig -= ALLOC_OFF;
+    old_size = ALLOC_S(orig_ptr);
+    orig_ptr -= ALLOC_OFF;
 
     ALLOC_CHECK_SIZE(old_size);
 
@@ -124,7 +125,7 @@ static inline void* DFL_ck_realloc(void* orig, u32 size) {
 
 #ifndef DEBUG_BUILD
 
-  ret = realloc(orig, size + ALLOC_OFF);
+  ret = realloc(orig_ptr, size + ALLOC_OFF);
   ALLOC_CHECK_RESULT(ret, size);
 
 #else
@@ -135,14 +136,14 @@ static inline void* DFL_ck_realloc(void* orig, u32 size) {
   ret = malloc(size + ALLOC_OFF);
   ALLOC_CHECK_RESULT(ret, size);
 
-  if (orig) {
+  if (orig_ptr) {
 
-    memcpy(ret + ALLOC_OFF, orig + ALLOC_OFF, MIN(size, old_size));
-    memset(orig, 0xFF, old_size + ALLOC_OFF);
+    memcpy(ret + ALLOC_OFF, orig_ptr + ALLOC_OFF, MIN(size, old_size));
+    memset(orig_ptr, 0xFF, old_size + ALLOC_OFF);
 
-    ALLOC_C(orig + ALLOC_OFF) = ALLOC_MAGIC_F;
+    ALLOC_C(orig_ptr + ALLOC_OFF) = ALLOC_MAGIC_F;
 
-    free(orig);
+    free(orig_ptr);
 
   }
 
@@ -180,7 +181,7 @@ static inline void* DFL_ck_realloc_kb(void* orig, u32 size) {
 
 
 static inline u8* DFL_ck_strdup(u8* str) {
-  void* ret;
+  u8* ret;
   u32   size;
 
   if (!str) return NULL;
@@ -201,7 +202,7 @@ static inline u8* DFL_ck_strdup(u8* str) {
 
 
 static inline void* DFL_ck_memdup(void* mem, u32 size) {
-  void* ret;
+  u8* ret;
 
   if (!mem || !size) return NULL;
 
@@ -241,20 +242,22 @@ static inline u8* DFL_ck_memdup_str(u8* mem, u32 size) {
 
 static inline void DFL_ck_free(void* mem) {
 
-  if (mem) {
+  u8* mem_ptr = mem;
 
-    CHECK_PTR(mem);
+  if (mem_ptr) {
+
+    CHECK_PTR(mem_ptr);
 
 #ifdef DEBUG_BUILD
 
     /* Catch pointer issues sooner. */
-    memset(mem - ALLOC_OFF, 0xFF, ALLOC_S(mem) + ALLOC_OFF);
+    memset(mem_ptr - ALLOC_OFF, 0xFF, ALLOC_S(mem_ptr) + ALLOC_OFF);
 
 #endif /* DEBUG_BUILD */
 
-    ALLOC_C(mem) = ALLOC_MAGIC_F;
+    ALLOC_C(mem_ptr) = ALLOC_MAGIC_F;
 
-    free(mem - ALLOC_OFF);
+    free(mem_ptr - ALLOC_OFF);
 
   }
 
@@ -451,34 +454,34 @@ static inline void TRK_ck_free(void* ptr, const char* file,
 /* Alias user-facing names to tracking functions: */
 
 #define ck_alloc(_p1) \
-  TRK_ck_alloc(_p1, __FILE__, __FUNCTION__, __LINE__)
+  TRK_ck_alloc(_p1, __FILE__, __func__, __LINE__)
 
 #define ck_realloc(_p1, _p2) \
-  TRK_ck_realloc(_p1, _p2, __FILE__, __FUNCTION__, __LINE__)
+  TRK_ck_realloc(_p1, _p2, __FILE__, __func__, __LINE__)
 
 #define ck_realloc_kb(_p1, _p2) \
-  TRK_ck_realloc_kb(_p1, _p2, __FILE__, __FUNCTION__, __LINE__)
+  TRK_ck_realloc_kb(_p1, _p2, __FILE__, __func__, __LINE__)
 
 #define ck_strdup(_p1) \
-  TRK_ck_strdup(_p1, __FILE__, __FUNCTION__, __LINE__)
+  TRK_ck_strdup(_p1, __FILE__, __func__, __LINE__)
 
 #define ck_memdup(_p1, _p2) \
-  TRK_ck_memdup(_p1, _p2, __FILE__, __FUNCTION__, __LINE__)
+  TRK_ck_memdup(_p1, _p2, __FILE__, __func__, __LINE__)
 
 #define ck_memdup_str(_p1, _p2) \
-  TRK_ck_memdup_str(_p1, _p2, __FILE__, __FUNCTION__, __LINE__)
+  TRK_ck_memdup_str(_p1, _p2, __FILE__, __func__, __LINE__)
 
 #define ck_free(_p1) \
-  TRK_ck_free(_p1, __FILE__, __FUNCTION__, __LINE__)
+  TRK_ck_free(_p1, __FILE__, __func__, __LINE__)
 
 #endif /* ^!DEBUG_BUILD */
 
-#define alloc_printf(_str...) ({ \
+#define alloc_printf(...) ({ \
     u8* _tmp; \
-    s32 _len = snprintf(NULL, 0, _str); \
+    s32 _len = snprintf(NULL, 0, __VA_ARGS__); \
     if (_len < 0) FATAL("Whoa, snprintf() fails?!"); \
     _tmp = ck_alloc(_len + 1); \
-    snprintf((char*)_tmp, _len + 1, _str); \
+    snprintf((char*)_tmp, _len + 1, __VA_ARGS__); \
     _tmp; \
   })
 
