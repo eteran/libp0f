@@ -586,7 +586,7 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const uint8_t* data
         /* MSS is a four-byte option with specified size. */
 
         if (data + 3 > opt_end) {
-          DEBUG("[#] MSS option would end past end of header (%u left).\n",
+          DEBUG("[#] MSS option would end past end of header (%lu left).\n",
                 opt_end - data);
           goto abort_options;
         }
@@ -607,7 +607,7 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const uint8_t* data
         /* WS is a three-byte option with specified size. */
 
         if (data + 2 > opt_end) {
-          DEBUG("[#] WS option would end past end of header (%u left).\n",
+          DEBUG("[#] WS option would end past end of header (%lu left).\n",
                 opt_end - data);
           goto abort_options;
         }
@@ -630,7 +630,7 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const uint8_t* data
         /* SACKOK is a two-byte option with specified size. */
 
         if (data + 1 > opt_end) {
-          DEBUG("[#] SACKOK option would end past end of header (%u left).\n",
+          DEBUG("[#] SACKOK option would end past end of header (%lu left).\n",
                 opt_end - data);
           goto abort_options;
         }
@@ -660,7 +660,7 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const uint8_t* data
         }
 
         if (data - 1 + *data > opt_end) {
-          DEBUG("[#] SACK option (len %u) is too long (%u left).\n",
+          DEBUG("[#] SACK option (len %u) is too long (%lu left).\n",
                 *data, opt_end - data);
           goto abort_options;
         }
@@ -674,7 +674,7 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const uint8_t* data
         /* Timestamp is a ten-byte option with specified size. */
 
         if (data + 9 > opt_end) {
-          DEBUG("[#] TStamp option would end past end of header (%u left).\n",
+          DEBUG("[#] TStamp option would end past end of header (%lu left).\n",
                 opt_end - data);
           goto abort_options;
         }
@@ -719,7 +719,7 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const uint8_t* data
         }
 
         if (data - 1 + *data > opt_end) {
-          DEBUG("[#] Unknown option 0x%02x (len %u) is too long (%u left).\n",
+          DEBUG("[#] Unknown option 0x%02x (len %u) is too long (%lu left).\n",
                 data[-1], *data, opt_end - data);
           goto abort_options;
         }
@@ -734,7 +734,7 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const uint8_t* data
 
 abort_options:
 
-    DEBUG("[#] Option parsing aborted (cnt = %u, remainder = %u).\n",
+    DEBUG("[#] Option parsing aborted (cnt = %u, remainder = %lu).\n",
           pk.opt_cnt, opt_end - data);
 
     pk.quirks |= QUIRK_OPT_BAD;
