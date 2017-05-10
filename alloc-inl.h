@@ -45,7 +45,7 @@
 
 
 #define CHECK_PTR_EXPR(_p) ({ \
-    typeof (_p) _tmp = (_p); \
+    __typeof__ (_p) _tmp = (_p); \
     CHECK_PTR(_tmp); \
     _tmp; \
   })
