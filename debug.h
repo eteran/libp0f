@@ -15,37 +15,37 @@
 #include "config.h"
 
 #ifdef DEBUG_BUILD
-#  define DEBUG(x...) fprintf(stderr, x)
+#  define DEBUG(...) fprintf(stderr, __VA_ARGS__)
 #else
-#  define DEBUG(x...) do {} while (0)
+#  define DEBUG(...) do {} while (0)
 #endif /* ^DEBUG_BUILD */
 
-#define ERRORF(x...)  fprintf(stderr, x)
-#define SAYF(x...)    printf(x)
+#define ERRORF(...)  fprintf(stderr, __VA_ARGS__)
+#define SAYF(...)    printf(__VA_ARGS__)
 
-#define WARN(x...) do { \
-    ERRORF("[!] WARNING: " x); \
+#define WARN(...) do { \
+    ERRORF("[!] WARNING: " __VA_ARGS__); \
     ERRORF("\n"); \
   } while (0)
 
-#define FATAL(x...) do { \
-    ERRORF("[-] PROGRAM ABORT : " x); \
+#define FATAL(...) do { \
+    ERRORF("[-] PROGRAM ABORT : " __VA_ARGS__); \
     ERRORF("\n         Location : %s(), %s:%u\n\n", \
-           __FUNCTION__, __FILE__, __LINE__); \
+           __func__, __FILE__, __LINE__); \
     exit(1); \
   } while (0)
 
-#define ABORT(x...) do { \
-    ERRORF("[-] PROGRAM ABORT : " x); \
+#define ABORT(...) do { \
+    ERRORF("[-] PROGRAM ABORT : " __VA_ARGS__); \
     ERRORF("\n         Location : %s(), %s:%u\n\n", \
-           __FUNCTION__, __FILE__, __LINE__); \
+           __func__, __FILE__, __LINE__); \
     abort(); \
   } while (0)
 
-#define PFATAL(x...) do { \
-    ERRORF("[-] SYSTEM ERROR : " x); \
+#define PFATAL(...) do { \
+    ERRORF("[-] SYSTEM ERROR : " __VA_ARGS__); \
     ERRORF("\n        Location : %s(), %s:%u\n", \
-           __FUNCTION__, __FILE__, __LINE__); \
+           __func__, __FILE__, __LINE__); \
     perror("      OS message "); \
     ERRORF("\n"); \
     exit(1); \
