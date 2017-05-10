@@ -17,32 +17,32 @@
 
 struct tcp_sig {
 
-  u32 opt_hash;                         /* Hash of opt_layout & opt_cnt       */
-  u32 quirks;                           /* Quirks                             */
+  uint32_t opt_hash;                         /* Hash of opt_layout & opt_cnt       */
+  uint32_t quirks;                           /* Quirks                             */
 
-  u8  opt_eol_pad;                      /* Amount of padding past EOL         */
-  u8  ip_opt_len;                       /* Length of IP options               */
+  uint8_t  opt_eol_pad;                      /* Amount of padding past EOL         */
+  uint8_t  ip_opt_len;                       /* Length of IP options               */
 
-  s8  ip_ver;                           /* -1 = any, IP_VER4, IP_VER6         */
+  int8_t  ip_ver;                           /* -1 = any, IP_VER4, IP_VER6         */
 
-  u8  ttl;                              /* Actual TTL                         */
+  uint8_t  ttl;                              /* Actual TTL                         */
 
-  s32 mss;                              /* Maximum segment size (-1 = any)    */
-  u16 win;                              /* Window size                        */
-  u8  win_type;                         /* WIN_TYPE_*                         */
-  s16 wscale;                           /* Window scale (-1 = any)            */
+  int32_t mss;                              /* Maximum segment size (-1 = any)    */
+  uint16_t win;                              /* Window size                        */
+  uint8_t  win_type;                         /* WIN_TYPE_*                         */
+  int16_t wscale;                           /* Window scale (-1 = any)            */
 
-  s8  pay_class;                        /* -1 = any, 0 = zero, 1 = non-zero   */
+  int8_t  pay_class;                        /* -1 = any, 0 = zero, 1 = non-zero   */
 
-  u16 tot_hdr;                          /* Total header length                */
-  u32 ts1;                              /* Own timestamp                      */
-  u64 recv_ms;                          /* Packet recv unix time (ms)         */
+  uint16_t tot_hdr;                          /* Total header length                */
+  uint32_t ts1;                              /* Own timestamp                      */
+  uint64_t recv_ms;                          /* Packet recv unix time (ms)         */
 
   /* Information used for matching with p0f.fp: */
 
   struct tcp_sig_record* matched;       /* NULL = no match                    */
-  u8  fuzzy;                            /* Approximate match?                 */
-  u8  dist;                             /* Distance                           */
+  uint8_t  fuzzy;                            /* Approximate match?                 */
+  uint8_t  dist;                             /* Distance                           */
 
 };
 
@@ -58,19 +58,19 @@ struct tcp_sig {
 
 struct tcp_sig_record {
 
-  u8  generic;                          /* Generic entry?                     */
-  s32 class_id;                         /* OS class ID (-1 = user)            */
-  s32 name_id;                          /* OS name ID                         */
-  u8* flavor;                           /* Human-readable flavor string       */
+  uint8_t  generic;                          /* Generic entry?                     */
+  int32_t class_id;                         /* OS class ID (-1 = user)            */
+  int32_t name_id;                          /* OS name ID                         */
+  uint8_t* flavor;                           /* Human-readable flavor string       */
 
-  u32 label_id;                         /* Signature label ID                 */
+  uint32_t label_id;                         /* Signature label ID                 */
 
-  u32* sys;                             /* OS class / name IDs for user apps  */
-  u32  sys_cnt;                         /* Length of sys                      */
+  uint32_t* sys;                             /* OS class / name IDs for user apps  */
+  uint32_t  sys_cnt;                         /* Length of sys                      */
 
-  u32  line_no;                         /* Line number in p0f.fp              */
+  uint32_t  line_no;                         /* Line number in p0f.fp              */
 
-  u8  bad_ttl;                          /* TTL is generated randomly          */
+  uint8_t  bad_ttl;                          /* TTL is generated randomly          */
 
   struct tcp_sig* sig;                  /* Actual signature data              */
 
@@ -81,15 +81,15 @@ struct tcp_sig_record {
 struct packet_data;
 struct packet_flow;
 
-void tcp_register_sig(u8 to_srv, u8 generic, s32 sig_class, u32 sig_name,
-                      u8* sig_flavor, u32 label_id, u32* sys, u32 sys_cnt,
-                      u8* val, u32 line_no);
+void tcp_register_sig(uint8_t to_srv, uint8_t generic, int32_t sig_class, uint32_t sig_name,
+                      uint8_t* sig_flavor, uint32_t label_id, uint32_t* sys, uint32_t sys_cnt,
+                      uint8_t* val, uint32_t line_no);
 
-struct tcp_sig* fingerprint_tcp(u8 to_srv, struct packet_data* pk,
+struct tcp_sig* fingerprint_tcp(uint8_t to_srv, struct packet_data* pk,
                                 struct packet_flow* f);
 
 void fingerprint_sendsyn(struct packet_data* pk);
 
-void check_ts_tcp(u8 to_srv, struct packet_data* pk, struct packet_flow* f);
+void check_ts_tcp(uint8_t to_srv, struct packet_data* pk, struct packet_flow* f);
 
 #endif /* _HAVE_FP_TCP_H */

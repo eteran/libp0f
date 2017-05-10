@@ -28,16 +28,16 @@
 #include "fp_mtu.h"
 
 static struct mtu_sig_record* sigs[SIG_BUCKETS];
-static u32 sig_cnt[SIG_BUCKETS];
+static uint32_t sig_cnt[SIG_BUCKETS];
 
 
 /* Register a new MTU signature. */
 
-void mtu_register_sig(u8* name, u8* val, u32 line_no) {
+void mtu_register_sig(uint8_t* name, uint8_t* val, uint32_t line_no) {
 
-  u8* nxt = val;
-  s32 mtu;
-  u32 bucket;
+  uint8_t* nxt = val;
+  int32_t mtu;
+  uint32_t bucket;
 
   while (isdigit(*nxt)) nxt++;
 
@@ -61,9 +61,9 @@ void mtu_register_sig(u8* name, u8* val, u32 line_no) {
 
 
 
-void fingerprint_mtu(u8 to_srv, struct packet_data* pk, struct packet_flow* f) {
+void fingerprint_mtu(uint8_t to_srv, struct packet_data* pk, struct packet_flow* f) {
 
-  u32 bucket, i, mtu;
+  uint32_t bucket, i, mtu;
 
   if (!pk->mss || f->sendsyn) return;
 

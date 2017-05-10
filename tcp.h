@@ -41,16 +41,16 @@
 
 struct ipv4_hdr {
 
-  u8  ver_hlen;          /* IP version (4), IP hdr len in dwords (4) */
-  u8  tos_ecn;           /* ToS field (6), ECN flags (2)             */
-  u16 tot_len;           /* Total packet length, in bytes            */
-  u16 id;                /* IP ID                                    */
-  u16 flags_off;         /* Flags (3), fragment offset (13)          */
-  u8  ttl;               /* Time to live                             */
-  u8  proto;             /* Next protocol                            */
-  u16 cksum;             /* Header checksum                          */
-  u8  src[4];            /* Source IP                                */
-  u8  dst[4];            /* Destination IP                           */
+  uint8_t  ver_hlen;          /* IP version (4), IP hdr len in dwords (4) */
+  uint8_t  tos_ecn;           /* ToS field (6), ECN flags (2)             */
+  uint16_t tot_len;           /* Total packet length, in bytes            */
+  uint16_t id;                /* IP ID                                    */
+  uint16_t flags_off;         /* Flags (3), fragment offset (13)          */
+  uint8_t  ttl;               /* Time to live                             */
+  uint8_t  proto;             /* Next protocol                            */
+  uint16_t cksum;             /* Header checksum                          */
+  uint8_t  src[4];            /* Source IP                                */
+  uint8_t  dst[4];            /* Destination IP                           */
 
   /* Dword-aligned options may follow. */
 
@@ -69,12 +69,12 @@ struct ipv4_hdr {
 
 struct ipv6_hdr {
 
-  u32 ver_tos;           /* Version (4), ToS (6), ECN (2), flow (20) */
-  u16 pay_len;           /* Total payload length, in bytes           */
-  u8  proto;             /* Next protocol                            */
-  u8  ttl;               /* Time to live                             */
-  u8  src[16];           /* Source IP                                */
-  u8  dst[16];           /* Destination IP                           */
+  uint32_t ver_tos;           /* Version (4), ToS (6), ECN (2), flow (20) */
+  uint16_t pay_len;           /* Total payload length, in bytes           */
+  uint8_t  proto;             /* Next protocol                            */
+  uint8_t  ttl;               /* Time to live                             */
+  uint8_t  src[16];           /* Source IP                                */
+  uint8_t  dst[16];           /* Destination IP                           */
 
   /* Dword-aligned options may follow if proto != PROTO_TCP and are
      included in total_length; but we won't be seeing such traffic due
@@ -90,15 +90,15 @@ struct ipv6_hdr {
 
 struct tcp_hdr {
 
-  u16 sport;             /* Source port                              */
-  u16 dport;             /* Destination port                         */
-  u32 seq;               /* Sequence number                          */
-  u32 ack;               /* Acknowledgment number                    */
-  u8  doff_rsvd;         /* Data off dwords (4), rsvd (3), ECN (1)   */
-  u8  flags;             /* Flags, including ECN                     */
-  u16 win;               /* Window size                              */
-  u16 cksum;             /* Header and payload checksum              */
-  u16 urg;               /* "Urgent" pointer                         */
+  uint16_t sport;             /* Source port                              */
+  uint16_t dport;             /* Destination port                         */
+  uint32_t seq;               /* Sequence number                          */
+  uint32_t ack;               /* Acknowledgment number                    */
+  uint8_t  doff_rsvd;         /* Data off dwords (4), rsvd (3), ECN (1)   */
+  uint8_t  flags;             /* Flags, including ECN                     */
+  uint16_t win;               /* Window size                              */
+  uint16_t cksum;             /* Header and payload checksum              */
+  uint16_t urg;               /* "Urgent" pointer                         */
 
   /* Dword-aligned options may follow. */
 

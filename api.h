@@ -32,41 +32,41 @@
 
 struct p0f_api_query {
 
-  u32 magic;                            /* Must be P0F_QUERY_MAGIC            */
-  u8  addr_type;                        /* P0F_ADDR_*                         */
-  u8  addr[16];                         /* IP address (big endian left align) */
+  uint32_t magic;                            /* Must be P0F_QUERY_MAGIC            */
+  uint8_t  addr_type;                        /* P0F_ADDR_*                         */
+  uint8_t  addr[16];                         /* IP address (big endian left align) */
 
 } __attribute__((packed));
 
 struct p0f_api_response {
 
-  u32 magic;                            /* Must be P0F_RESP_MAGIC             */
-  u32 status;                           /* P0F_STATUS_*                       */
+  uint32_t magic;                            /* Must be P0F_RESP_MAGIC             */
+  uint32_t status;                           /* P0F_STATUS_*                       */
 
-  u32 first_seen;                       /* First seen (unix time)             */
-  u32 last_seen;                        /* Last seen (unix time)              */
-  u32 total_conn;                       /* Total connections seen             */
+  uint32_t first_seen;                       /* First seen (unix time)             */
+  uint32_t last_seen;                        /* Last seen (unix time)              */
+  uint32_t total_conn;                       /* Total connections seen             */
 
-  u32 uptime_min;                       /* Last uptime (minutes)              */
-  u32 up_mod_days;                      /* Uptime modulo (days)               */
+  uint32_t uptime_min;                       /* Last uptime (minutes)              */
+  uint32_t up_mod_days;                      /* Uptime modulo (days)               */
 
-  u32 last_nat;                         /* NAT / LB last detected (unix time) */
-  u32 last_chg;                         /* OS chg last detected (unix time)   */
+  uint32_t last_nat;                         /* NAT / LB last detected (unix time) */
+  uint32_t last_chg;                         /* OS chg last detected (unix time)   */
 
-  s16 distance;                         /* System distance                    */
+  int16_t distance;                         /* System distance                    */
 
-  u8  bad_sw;                           /* Host is lying about U-A / Server   */
-  u8  os_match_q;                       /* Match quality                      */
+  uint8_t  bad_sw;                           /* Host is lying about U-A / Server   */
+  uint8_t  os_match_q;                       /* Match quality                      */
 
-  u8  os_name[P0F_STR_MAX + 1];         /* Name of detected OS                */
-  u8  os_flavor[P0F_STR_MAX + 1];       /* Flavor of detected OS              */
+  uint8_t  os_name[P0F_STR_MAX + 1];         /* Name of detected OS                */
+  uint8_t  os_flavor[P0F_STR_MAX + 1];       /* Flavor of detected OS              */
 
-  u8  http_name[P0F_STR_MAX + 1];       /* Name of detected HTTP app          */
-  u8  http_flavor[P0F_STR_MAX + 1];     /* Flavor of detected HTTP app        */
+  uint8_t  http_name[P0F_STR_MAX + 1];       /* Name of detected HTTP app          */
+  uint8_t  http_flavor[P0F_STR_MAX + 1];     /* Flavor of detected HTTP app        */
 
-  u8  link_type[P0F_STR_MAX + 1];       /* Link type                          */
+  uint8_t  link_type[P0F_STR_MAX + 1];       /* Link type                          */
 
-  u8  language[P0F_STR_MAX + 1];        /* Language                           */
+  uint8_t  language[P0F_STR_MAX + 1];        /* Language                           */
 
 } __attribute__((packed));
 

@@ -31,11 +31,11 @@
 #define SYS_CLASS_FLAG       (1<<31)
 #define SYS_NF(_x)           ((_x) & ~SYS_CLASS_FLAG)
 
-extern u8** fp_os_classes;
-extern u8** fp_os_names;
+extern uint8_t** fp_os_classes;
+extern uint8_t** fp_os_names;
 
-void read_config(u8* fname);
+void read_config(uint8_t* fname);
 
-u32 lookup_name_id(u8* name, u8 len);
+uint32_t lookup_name_id(uint8_t* name, uint8_t len);
 
 #endif /* !_HAVE_READFP_H */

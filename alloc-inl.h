@@ -31,8 +31,8 @@
 #define ALLOC_MAGIC   0xFF00
 #define ALLOC_MAGIC_F 0xFE00
 
-#define ALLOC_C(_ptr) (((u16*)(_ptr))[-3])
-#define ALLOC_S(_ptr) (((u32*)(_ptr))[-1])
+#define ALLOC_C(_ptr) (((uint16_t*)(_ptr))[-3])
+#define ALLOC_S(_ptr) (((uint32_t*)(_ptr))[-1])
 
 #define CHECK_PTR(_p) do { \
     if ((_p) && ALLOC_C(_p) != ALLOC_MAGIC) {\
@@ -63,8 +63,8 @@
 #endif /* ^ALIGN_ACCESS */
 
 
-static inline void* DFL_ck_alloc(u32 size) {
-  u8* ret;
+static inline void* DFL_ck_alloc(uint32_t size) {
+  uint8_t* ret;
 
   if (!size) return NULL;
 
@@ -81,10 +81,10 @@ static inline void* DFL_ck_alloc(u32 size) {
 }
 
 
-static inline void* DFL_ck_realloc(void* orig, u32 size) {
-  u8* ret;
-  u32   old_size = 0;
-  u8* orig_ptr = orig;
+static inline void* DFL_ck_realloc(void* orig, uint32_t size) {
+  uint8_t* ret;
+  uint32_t   old_size = 0;
+  uint8_t* orig_ptr = orig;
 
   if (!size) {
 
@@ -161,7 +161,7 @@ static inline void* DFL_ck_realloc(void* orig, u32 size) {
 }
 
 
-static inline void* DFL_ck_realloc_kb(void* orig, u32 size) {
+static inline void* DFL_ck_realloc_kb(void* orig, uint32_t size) {
 
 #ifndef DEBUG_BUILD
 
@@ -180,9 +180,9 @@ static inline void* DFL_ck_realloc_kb(void* orig, u32 size) {
 }
 
 
-static inline u8* DFL_ck_strdup(u8* str) {
-  u8* ret;
-  u32   size;
+static inline uint8_t* DFL_ck_strdup(uint8_t* str) {
+  uint8_t* ret;
+  uint32_t   size;
 
   if (!str) return NULL;
 
@@ -201,8 +201,8 @@ static inline u8* DFL_ck_strdup(u8* str) {
 }
 
 
-static inline void* DFL_ck_memdup(void* mem, u32 size) {
-  u8* ret;
+static inline void* DFL_ck_memdup(void* mem, uint32_t size) {
+  uint8_t* ret;
 
   if (!mem || !size) return NULL;
 
@@ -219,8 +219,8 @@ static inline void* DFL_ck_memdup(void* mem, u32 size) {
 }
 
 
-static inline u8* DFL_ck_memdup_str(u8* mem, u32 size) {
-  u8* ret;
+static inline uint8_t* DFL_ck_memdup_str(uint8_t* mem, uint32_t size) {
+  uint8_t* ret;
 
   if (!mem || !size) return NULL;
 
@@ -242,7 +242,7 @@ static inline u8* DFL_ck_memdup_str(u8* mem, u32 size) {
 
 static inline void DFL_ck_free(void* mem) {
 
-  u8* mem_ptr = mem;
+  uint8_t* mem_ptr = mem;
 
   if (mem_ptr) {
 
@@ -285,21 +285,21 @@ static inline void DFL_ck_free(void* mem) {
 struct TRK_obj {
   void *ptr;
   char *file, *func;
-  u32  line;
+  uint32_t  line;
 };
 
 
 extern struct TRK_obj* TRK[ALLOC_BUCKETS];
-extern u32 TRK_cnt[ALLOC_BUCKETS];
+extern uint32_t TRK_cnt[ALLOC_BUCKETS];
 
 #define TRKH(_ptr) (((((uintptr_t)(_ptr)) >> 16) ^ ((uintptr_t)(_ptr))) % ALLOC_BUCKETS)
 
 /* Adds a new entry to the list of allocated objects. */
 
 static inline void TRK_alloc_buf(void* ptr, const char* file, const char* func,
-                                 u32 line) {
+                                 uint32_t line) {
 
-  u32 i, bucket;
+  uint32_t i, bucket;
 
   if (!ptr) return;
 
@@ -339,9 +339,9 @@ static inline void TRK_alloc_buf(void* ptr, const char* file, const char* func,
 /* Removes entry from the list of allocated objects. */
 
 static inline void TRK_free_buf(void* ptr, const char* file, const char* func,
-                                u32 line) {
+                                uint32_t line) {
 
-  u32 i, bucket;
+  uint32_t i, bucket;
 
   if (!ptr) return;
 
@@ -366,7 +366,7 @@ static inline void TRK_free_buf(void* ptr, const char* file, const char* func,
 
 static inline void TRK_report(void) {
 
-  u32 i, bucket;
+  uint32_t i, bucket;
 
   fflush(0);
 
@@ -381,8 +381,8 @@ static inline void TRK_report(void) {
 
 /* Simple wrappers for non-debugging functions: */
 
-static inline void* TRK_ck_alloc(u32 size, const char* file, const char* func,
-                                 u32 line) {
+static inline void* TRK_ck_alloc(uint32_t size, const char* file, const char* func,
+                                 uint32_t line) {
 
   void* ret = DFL_ck_alloc(size);
   TRK_alloc_buf(ret, file, func, line);
@@ -391,8 +391,8 @@ static inline void* TRK_ck_alloc(u32 size, const char* file, const char* func,
 }
 
 
-static inline void* TRK_ck_realloc(void* orig, u32 size, const char* file,
-                                   const char* func, u32 line) {
+static inline void* TRK_ck_realloc(void* orig, uint32_t size, const char* file,
+                                   const char* func, uint32_t line) {
 
   void* ret = DFL_ck_realloc(orig, size);
   TRK_free_buf(orig, file, func, line);
@@ -402,8 +402,8 @@ static inline void* TRK_ck_realloc(void* orig, u32 size, const char* file,
 }
 
 
-static inline void* TRK_ck_realloc_kb(void* orig, u32 size, const char* file,
-                                      const char* func, u32 line) {
+static inline void* TRK_ck_realloc_kb(void* orig, uint32_t size, const char* file,
+                                      const char* func, uint32_t line) {
 
   void* ret = DFL_ck_realloc_kb(orig, size);
   TRK_free_buf(orig, file, func, line);
@@ -413,8 +413,8 @@ static inline void* TRK_ck_realloc_kb(void* orig, u32 size, const char* file,
 }
 
 
-static inline void* TRK_ck_strdup(u8* str, const char* file, const char* func,
-                                  u32 line) {
+static inline void* TRK_ck_strdup(uint8_t* str, const char* file, const char* func,
+                                  uint32_t line) {
 
   void* ret = DFL_ck_strdup(str);
   TRK_alloc_buf(ret, file, func, line);
@@ -423,8 +423,8 @@ static inline void* TRK_ck_strdup(u8* str, const char* file, const char* func,
 }
 
 
-static inline void* TRK_ck_memdup(void* mem, u32 size, const char* file,
-                                  const char* func, u32 line) {
+static inline void* TRK_ck_memdup(void* mem, uint32_t size, const char* file,
+                                  const char* func, uint32_t line) {
 
   void* ret = DFL_ck_memdup(mem, size);
   TRK_alloc_buf(ret, file, func, line);
@@ -433,8 +433,8 @@ static inline void* TRK_ck_memdup(void* mem, u32 size, const char* file,
 }
 
 
-static inline void* TRK_ck_memdup_str(void* mem, u32 size, const char* file,
-                                      const char* func, u32 line) {
+static inline void* TRK_ck_memdup_str(void* mem, uint32_t size, const char* file,
+                                      const char* func, uint32_t line) {
 
   void* ret = DFL_ck_memdup_str(mem, size);
   TRK_alloc_buf(ret, file, func, line);
@@ -444,7 +444,7 @@ static inline void* TRK_ck_memdup_str(void* mem, u32 size, const char* file,
 
 
 static inline void TRK_ck_free(void* ptr, const char* file,
-                                const char* func, u32 line) {
+                                const char* func, uint32_t line) {
 
   TRK_free_buf(ptr, file, func, line);
   DFL_ck_free(ptr);
@@ -477,8 +477,8 @@ static inline void TRK_ck_free(void* ptr, const char* file,
 #endif /* ^!DEBUG_BUILD */
 
 #define alloc_printf(...) ({ \
-    u8* _tmp; \
-    s32 _len = snprintf(NULL, 0, __VA_ARGS__); \
+    uint8_t* _tmp; \
+    int32_t _len = snprintf(NULL, 0, __VA_ARGS__); \
     if (_len < 0) FATAL("Whoa, snprintf() fails?!"); \
     _tmp = ck_alloc(_len + 1); \
     snprintf((char*)_tmp, _len + 1, __VA_ARGS__); \

@@ -16,10 +16,10 @@
 
 #define ROL32(_x, _r) (((_x) << (_r)) | ((_x) >> (32 - (_r))))
 
-static inline u32 hash32(const void* key, u32 len, u32 seed) {
+static inline uint32_t hash32(const void* key, uint32_t len, uint32_t seed) {
 
-  u32 a, b, c;
-  const u8* k = key;
+  uint32_t a, b, c;
+  const uint8_t* k = key;
 
   a = b = c = 0xdeadbeef + len + seed;
 

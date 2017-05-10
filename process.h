@@ -21,37 +21,37 @@
 
 struct packet_data {
 
-  u8  ip_ver;                           /* IP_VER4, IP_VER6                   */
-  u8  tcp_type;                         /* TCP_SYN, ACK, FIN, RST             */
+  uint8_t  ip_ver;                           /* IP_VER4, IP_VER6                   */
+  uint8_t  tcp_type;                         /* TCP_SYN, ACK, FIN, RST             */
 
-  u8  src[16];                          /* Source address (left-aligned)      */
-  u8  dst[16];                          /* Destination address (left-aligned  */
+  uint8_t  src[16];                          /* Source address (left-aligned)      */
+  uint8_t  dst[16];                          /* Destination address (left-aligned  */
 
-  u16 sport;                            /* Source port                        */
-  u16 dport;                            /* Destination port                   */
+  uint16_t sport;                            /* Source port                        */
+  uint16_t dport;                            /* Destination port                   */
 
-  u8  ttl;                              /* Observed TTL                       */
-  u8  tos;                              /* IP ToS value                       */
+  uint8_t  ttl;                              /* Observed TTL                       */
+  uint8_t  tos;                              /* IP ToS value                       */
 
-  u16 mss;                              /* Maximum segment size               */
-  u16 win;                              /* Window size                        */
-  u8  wscale;                           /* Window scaling                     */
-  u16 tot_hdr;                          /* Total headers (for MTU calc)       */
+  uint16_t mss;                              /* Maximum segment size               */
+  uint16_t win;                              /* Window size                        */
+  uint8_t  wscale;                           /* Window scaling                     */
+  uint16_t tot_hdr;                          /* Total headers (for MTU calc)       */
 
-  u8  opt_layout[MAX_TCP_OPT];          /* Ordering of TCP options            */
-  u8  opt_cnt;                          /* Count of TCP options               */
-  u8  opt_eol_pad;                      /* Amount of padding past EOL         */
+  uint8_t  opt_layout[MAX_TCP_OPT];          /* Ordering of TCP options            */
+  uint8_t  opt_cnt;                          /* Count of TCP options               */
+  uint8_t  opt_eol_pad;                      /* Amount of padding past EOL         */
 
-  u32 ts1;                              /* Own timestamp                      */
+  uint32_t ts1;                              /* Own timestamp                      */
 
-  u32 quirks;                           /* QUIRK_*                            */
+  uint32_t quirks;                           /* QUIRK_*                            */
 
-  u8  ip_opt_len;                       /* Length of IP options               */
+  uint8_t  ip_opt_len;                       /* Length of IP options               */
 
-  u8* payload;                          /* TCP payload                        */
-  u16 pay_len;                          /* Length of TCP payload              */
+  uint8_t* payload;                          /* TCP payload                        */
+  uint16_t pay_len;                          /* Length of TCP payload              */
 
-  u32 seq;                              /* seq value seen                     */
+  uint32_t seq;                              /* seq value seen                     */
 
 };
 
@@ -87,53 +87,53 @@ struct host_data {
 
   struct host_data *prev, *next;        /* Linked lists                       */
   struct host_data *older, *newer;
-  u32 use_cnt;                          /* Number of packet_flows attached    */
+  uint32_t use_cnt;                          /* Number of packet_flows attached    */
 
-  u32 first_seen;                       /* Record created (unix time)         */
-  u32 last_seen;                        /* Host last seen (unix time)         */
-  u32 total_conn;                       /* Total number of connections ever   */
+  uint32_t first_seen;                       /* Record created (unix time)         */
+  uint32_t last_seen;                        /* Host last seen (unix time)         */
+  uint32_t total_conn;                       /* Total number of connections ever   */
 
-  u8 ip_ver;                            /* Address type                       */
-  u8 addr[16];                          /* Host address data                  */
+  uint8_t ip_ver;                            /* Address type                       */
+  uint8_t addr[16];                          /* Host address data                  */
 
   struct tcp_sig* last_syn;             /* Sig of the most recent SYN         */
   struct tcp_sig* last_synack;          /* Sig of the most recent SYN+ACK     */
 
-  s32 last_class_id;                    /* OS class ID (-1 = not found)       */
-  s32 last_name_id;                     /* OS name ID (-1 = not found)        */
-  u8* last_flavor;                      /* Last OS flavor                     */
+  int32_t last_class_id;                    /* OS class ID (-1 = not found)       */
+  int32_t last_name_id;                     /* OS name ID (-1 = not found)        */
+  uint8_t* last_flavor;                      /* Last OS flavor                     */
 
-  u8  last_quality;                     /* Generic or fuzzy match?            */
+  uint8_t  last_quality;                     /* Generic or fuzzy match?            */
 
-  u8* link_type;                        /* MTU-derived link type              */
+  uint8_t* link_type;                        /* MTU-derived link type              */
 
-  u8  cli_scores[NAT_SCORES];           /* Scoreboard for client NAT          */
-  u8  srv_scores[NAT_SCORES];           /* Scoreboard for server NAT          */
-  u16 nat_reasons;                      /* NAT complaints                     */
+  uint8_t  cli_scores[NAT_SCORES];           /* Scoreboard for client NAT          */
+  uint8_t  srv_scores[NAT_SCORES];           /* Scoreboard for server NAT          */
+  uint16_t nat_reasons;                      /* NAT complaints                     */
 
-  u32 last_nat;                         /* Last NAT detection time            */
-  u32 last_chg;                         /* Last OS change detection time      */
+  uint32_t last_nat;                         /* Last NAT detection time            */
+  uint32_t last_chg;                         /* Last OS change detection time      */
 
-  u16 last_port;                        /* Source port on last SYN            */
+  uint16_t last_port;                        /* Source port on last SYN            */
 
-  u8  distance;                         /* Last measured distance             */
+  uint8_t  distance;                         /* Last measured distance             */
 
-  s32 last_up_min;                      /* Last computed uptime (-1 = none)   */
-  u32 up_mod_days;                      /* Uptime modulo (days)               */
+  int32_t last_up_min;                      /* Last computed uptime (-1 = none)   */
+  uint32_t up_mod_days;                      /* Uptime modulo (days)               */
 
   /* HTTP business: */
 
   struct http_sig* http_req_os;         /* Last request, if class != -1       */
   struct http_sig* http_resp;           /* Last response                      */
 
-  s32 http_name_id;                     /* Client name ID (-1 = not found)    */
-  u8* http_flavor;                      /* Client flavor                      */
+  int32_t http_name_id;                     /* Client name ID (-1 = not found)    */
+  uint8_t* http_flavor;                      /* Client flavor                      */
 
-  u8* language;                         /* Detected language                  */
+  uint8_t* language;                         /* Detected language                  */
 
-  u8  bad_sw;                           /* Used dishonest U-A or Server?      */
+  uint8_t  bad_sw;                           /* Used dishonest U-A or Server?      */
 
-  u16 http_resp_port;                   /* Port on which response seen        */
+  uint16_t http_resp_port;                   /* Port on which response seen        */
 
 };
 
@@ -160,56 +160,56 @@ struct packet_flow {
 
   struct packet_flow *prev, *next;      /* Linked lists                       */
   struct packet_flow *older, *newer;
-  u32 bucket;                           /* Bucket this flow belongs to        */
+  uint32_t bucket;                           /* Bucket this flow belongs to        */
 
   struct host_data* client;             /* Requesting client                  */
   struct host_data* server;             /* Target server                      */
 
-  u16 cli_port;                         /* Client port                        */
-  u16 srv_port;                         /* Server port                        */
+  uint16_t cli_port;                         /* Client port                        */
+  uint16_t srv_port;                         /* Server port                        */
 
-  u8  acked;                            /* SYN+ACK received?                  */
-  u8  sendsyn;                          /* Created by p0f-sendsyn?            */
+  uint8_t  acked;                            /* SYN+ACK received?                  */
+  uint8_t  sendsyn;                          /* Created by p0f-sendsyn?            */
 
-  s16 srv_tps;                          /* Computed TS divisor (-1 = bad)     */ 
-  s16 cli_tps;
+  int16_t srv_tps;                          /* Computed TS divisor (-1 = bad)     */ 
+  int16_t cli_tps;
 
-  u8* request;                          /* Client-originating data            */
-  u32 req_len;                          /* Captured data length               */
-  u32 next_cli_seq;                     /* Next seq on cli -> srv packet      */
+  uint8_t* request;                          /* Client-originating data            */
+  uint32_t req_len;                          /* Captured data length               */
+  uint32_t next_cli_seq;                     /* Next seq on cli -> srv packet      */
 
-  u8* response;                         /* Server-originating data            */
-  u32 resp_len;                         /* Captured data length               */
-  u32 next_srv_seq;                     /* Next seq on srv -> cli packet      */
-  u16 syn_mss;                          /* MSS on SYN packet                  */
+  uint8_t* response;                         /* Server-originating data            */
+  uint32_t resp_len;                         /* Captured data length               */
+  uint32_t next_srv_seq;                     /* Next seq on srv -> cli packet      */
+  uint16_t syn_mss;                          /* MSS on SYN packet                  */
 
-  u32 created;                          /* Flow creation date (unix time)     */
+  uint32_t created;                          /* Flow creation date (unix time)     */
 
   /* Application-level fingerprinting: */
 
-  s8  in_http;                          /* 0 = tbd, 1 = yes, -1 = no          */
+  int8_t  in_http;                          /* 0 = tbd, 1 = yes, -1 = no          */
 
-  u8  http_req_done;                    /* Done collecting req headers?       */
-  u32 http_pos;                         /* Current parsing offset             */
-  u8  http_gotresp1;                    /* Got initial line of a response?    */
+  uint8_t  http_req_done;                    /* Done collecting req headers?       */
+  uint32_t http_pos;                         /* Current parsing offset             */
+  uint8_t  http_gotresp1;                    /* Got initial line of a response?    */
 
   struct http_sig http_tmp;             /* Temporary signature                */
 
 };
 
-extern u64 packet_cnt;
+extern uint64_t packet_cnt;
 
-void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const u8* data);
+void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const uint8_t* data);
 
-u8* addr_to_str(u8* data, u8 ip_ver);
+uint8_t* addr_to_str(uint8_t* data, uint8_t ip_ver);
 
-u64 get_unix_time_ms(void);
-u32 get_unix_time(void);
+uint64_t get_unix_time_ms(void);
+uint32_t get_unix_time(void);
 
-void add_nat_score(u8 to_srv, struct packet_flow* f, u16 reason, u8 score);
-void verify_tool_class(u8 to_srv, struct packet_flow* f, u32* sys, u32 sys_cnt);
+void add_nat_score(uint8_t to_srv, struct packet_flow* f, uint16_t reason, uint8_t score);
+void verify_tool_class(uint8_t to_srv, struct packet_flow* f, uint32_t* sys, uint32_t sys_cnt);
 
-struct host_data* lookup_host(u8* addr, u8 ip_ver);
+struct host_data* lookup_host(uint8_t* addr, uint8_t ip_ver);
 
 void destroy_all_hosts(void);
 

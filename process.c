@@ -37,10 +37,10 @@
 #include "fp_mtu.h"
 #include "fp_http.h"
 
-u64 packet_cnt;                         /* Total number of packets processed  */
+uint64_t packet_cnt;                         /* Total number of packets processed  */
 
-static s8 link_off = -1;                /* Link-specific IP header offset     */
-static u8 bad_packets;                  /* Seen non-IP packets?               */
+static int8_t link_off = -1;                /* Link-specific IP header offset     */
+static uint8_t bad_packets;                  /* Seen non-IP packets?               */
 
 static struct host_data *host_by_age,   /* All host entries, by last mod      */
                         *newest_host;   /* Tail of the list                   */
@@ -55,33 +55,33 @@ static struct timeval* cur_time;        /* Current time, courtesy of pcap     */
 static struct host_data    *host_b[HOST_BUCKETS];
 static struct packet_flow  *flow_b[FLOW_BUCKETS];
 
-static u32 host_cnt, flow_cnt;          /* Counters for bookkeeping purposes  */
+static uint32_t host_cnt, flow_cnt;          /* Counters for bookkeeping purposes  */
 
 static void flow_dispatch(struct packet_data* pk);
-static void nuke_flows(u8 silent);
+static void nuke_flows(uint8_t silent);
 static void expire_cache(void);
 
 
 /* Get unix time in milliseconds. */
 
-u64 get_unix_time_ms(void) {
+uint64_t get_unix_time_ms(void) {
 
-  return ((u64)cur_time->tv_sec) * 1000 + (cur_time->tv_usec / 1000);
+  return ((uint64_t)cur_time->tv_sec) * 1000 + (cur_time->tv_usec / 1000);
 }
 
 
 /* Get unix time in seconds. */
 
-u32 get_unix_time(void) {
+uint32_t get_unix_time(void) {
   return cur_time->tv_sec;
 }
 
 
 /* Find link-specific offset (pcap knows, but won't tell). */
 
-static void find_offset(const u8* data, s32 total_len) {
+static void find_offset(const uint8_t* data, int32_t total_len) {
 
-  u8 i;
+  uint8_t i;
 
   /* Check hardcoded values for some of the most common options. */
 
@@ -179,7 +179,7 @@ static void find_offset(const u8* data, s32 total_len) {
 
 /* Convert IPv4 or IPv6 address to a human-readable form. */
 
-u8* addr_to_str(u8* data, u8 ip_ver) {
+uint8_t* addr_to_str(uint8_t* data, uint8_t ip_ver) {
 
   static char tmp[128];
 
@@ -200,7 +200,7 @@ u8* addr_to_str(u8* data, u8 ip_ver) {
 
   }
 
-  return (u8*)tmp;
+  return (uint8_t*)tmp;
 
 }
 
@@ -208,15 +208,15 @@ u8* addr_to_str(u8* data, u8 ip_ver) {
 /* Parse PCAP input, with plenty of sanity checking. Store interesting details
    in a protocol-agnostic buffer that will be then examined upstream. */
 
-void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const u8* data) {
+void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const uint8_t* data) {
 
   struct tcp_hdr* tcp;
   struct packet_data pk;
 
-  s32 packet_len;
-  u32 tcp_doff;
+  int32_t packet_len;
+  uint32_t tcp_doff;
 
-  u8* opt_end;
+  uint8_t* opt_end;
 
   packet_cnt++;
   
@@ -261,9 +261,9 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const u8* data) {
     
     const struct ipv4_hdr* ip4 = (struct ipv4_hdr*)data;
 
-    u32 hdr_len = (ip4->ver_hlen & 0x0F) * 4;
-    u16 flags_off = ntohs(RD16(ip4->flags_off));
-    u16 tot_len = ntohs(RD16(ip4->tot_len));
+    uint32_t hdr_len = (ip4->ver_hlen & 0x0F) * 4;
+    uint16_t flags_off = ntohs(RD16(ip4->flags_off));
+    uint16_t tot_len = ntohs(RD16(ip4->tot_len));
 
     /* If the packet claims to be shorter than what we received off the wire,
        honor this claim to account for etherleak-type bugs. */
@@ -364,8 +364,8 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const u8* data) {
      ************************/
     
     const struct ipv6_hdr* ip6 = (struct ipv6_hdr*)data;
-    u32 ver_tos = ntohl(RD32(ip6->ver_tos));
-    u32 tot_len = ntohs(RD16(ip6->pay_len)) + sizeof(struct ipv6_hdr);
+    uint32_t ver_tos = ntohl(RD32(ip6->ver_tos));
+    uint32_t tot_len = ntohs(RD16(ip6->pay_len)) + sizeof(struct ipv6_hdr);
 
     /* If the packet claims to be shorter than what we received off the wire,
        honor this claim to account for etherleak-type bugs. */
@@ -438,7 +438,7 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const u8* data) {
    * TCP parsing *
    ***************/
 
-  data = (u8*)tcp;
+  data = (uint8_t*)tcp;
 
   tcp_doff = (tcp->doff_rsvd >> 4) * 4;
 
@@ -531,7 +531,7 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const u8* data) {
 
   } else {
 
-    pk.payload = (u8*)data + tcp_doff;
+    pk.payload = (uint8_t*)data + tcp_doff;
     pk.pay_len = packet_len - tcp_doff;
 
   }
@@ -540,8 +540,8 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const u8* data) {
    * TCP option parsing *
    **********************/
 
-  opt_end = (u8*)data + tcp_doff; /* First byte of non-option data */
-  data = (u8*)(tcp + 1);
+  opt_end = (uint8_t*)data + tcp_doff; /* First byte of non-option data */
+  data = (uint8_t*)(tcp + 1);
 
   pk.opt_cnt     = 0;
   pk.opt_eol_pad = 0;
@@ -692,7 +692,7 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const u8* data) {
         if (pk.tcp_type == TCP_SYN && RD32p(data + 5)) {
 
           DEBUG("[#] Non-zero second timestamp: 0x%08x.\n",
-                ntohl(*(u32*)(data + 5)));
+                ntohl(*(uint32_t*)(data + 5)));
 
           pk.quirks |= QUIRK_OPT_NZ_TS2;
 
@@ -749,9 +749,9 @@ abort_options:
 /* Calculate hash bucket for packet_flow. Keep the hash symmetrical: switching
    source and dest should have no effect. */
 
-static u32 get_flow_bucket(struct packet_data* pk) {
+static uint32_t get_flow_bucket(struct packet_data* pk) {
 
-  u32 bucket;
+  uint32_t bucket;
 
   if (pk->ip_ver == IP_VER4) {
     bucket = hash32(pk->src, 4, hash_seed) ^ hash32(pk->dst, 4, hash_seed);
@@ -768,9 +768,9 @@ static u32 get_flow_bucket(struct packet_data* pk) {
 
 /* Calculate hash bucket for host_data. */
 
-static u32 get_host_bucket(u8* addr, u8 ip_ver) {
+static uint32_t get_host_bucket(uint8_t* addr, uint8_t ip_ver) {
 
-  u32 bucket;
+  uint32_t bucket;
 
   bucket = hash32(addr, (ip_ver == IP_VER4) ? 4 : 16, hash_seed);
 
@@ -781,9 +781,9 @@ static u32 get_host_bucket(u8* addr, u8 ip_ver) {
 
 /* Look up host data. */
 
-struct host_data* lookup_host(u8* addr, u8 ip_ver) {
+struct host_data* lookup_host(uint8_t* addr, uint8_t ip_ver) {
 
-  u32 bucket = get_host_bucket(addr, ip_ver);
+  uint32_t bucket = get_host_bucket(addr, ip_ver);
   struct host_data* h = host_b[bucket];
 
   while (CP(h)) {
@@ -805,7 +805,7 @@ struct host_data* lookup_host(u8* addr, u8 ip_ver) {
 
 static void destroy_host(struct host_data* h) {
 
-  u32 bucket; 
+  uint32_t bucket; 
 
   bucket = get_host_bucket(CP(h)->addr, h->ip_ver);
 
@@ -848,7 +848,7 @@ static void destroy_host(struct host_data* h) {
 
 static void nuke_hosts(void) {
 
-  u32 kcnt = 1 + (host_cnt * KILL_PERCENT / 100);
+  uint32_t kcnt = 1 + (host_cnt * KILL_PERCENT / 100);
   struct host_data* target = host_by_age;
 
   if (!read_file)
@@ -868,9 +868,9 @@ static void nuke_hosts(void) {
 
 /* Create a minimal host data. */
 
-static struct host_data* create_host(u8* addr, u8 ip_ver) {
+static struct host_data* create_host(uint8_t* addr, uint8_t ip_ver) {
 
-  u32 bucket = get_host_bucket(addr, ip_ver);
+  uint32_t bucket = get_host_bucket(addr, ip_ver);
   struct host_data* nh;
 
   if (host_cnt > max_hosts) nuke_hosts();
@@ -1007,9 +1007,9 @@ static void destroy_flow(struct packet_flow* f) {
 
 /* Indiscriminately kill some of the oldest flows. */
 
-static void nuke_flows(u8 silent) {
+static void nuke_flows(uint8_t silent) {
 
-  u32 kcnt = 1 + (flow_cnt * KILL_PERCENT / 100);
+  uint32_t kcnt = 1 + (flow_cnt * KILL_PERCENT / 100);
 
   if (silent)
     DEBUG("[#] Pruning connections - trying to delete %u...\n",kcnt);
@@ -1027,7 +1027,7 @@ static void nuke_flows(u8 silent) {
 
 static struct packet_flow* create_flow_from_syn(struct packet_data* pk) {
 
-  u32 bucket = get_flow_bucket(pk);
+  uint32_t bucket = get_flow_bucket(pk);
   struct packet_flow* nf;
 
   if (flow_cnt > max_conn) nuke_flows(0);
@@ -1091,9 +1091,9 @@ static struct packet_flow* create_flow_from_syn(struct packet_data* pk) {
 
 /* Look up an existing flow. */
 
-static struct packet_flow* lookup_flow(struct packet_data* pk, u8* to_srv) {
+static struct packet_flow* lookup_flow(struct packet_data* pk, uint8_t* to_srv) {
 
-  u32 bucket = get_flow_bucket(pk);
+  uint32_t bucket = get_flow_bucket(pk);
   struct packet_flow* f = flow_b[bucket];
 
   while (CP(f)) {
@@ -1136,9 +1136,9 @@ lookup_next:
 
 static void expire_cache(void) {
   struct host_data* target;
-  static u32 pt;
+  static uint32_t pt;
 
-  u32 ct = get_unix_time();
+  uint32_t ct = get_unix_time();
 
   if (ct == pt) return;
   pt = ct;
@@ -1165,8 +1165,8 @@ static void flow_dispatch(struct packet_data* pk) {
 
   struct packet_flow* f;
   struct tcp_sig* tsig;
-  u8 to_srv = 0;
-  u8 need_more = 0;
+  uint8_t to_srv = 0;
+  uint8_t need_more = 0;
 
   DEBUG("[#] Received TCP packet: %s/%u -> ",
         addr_to_str(pk->src, pk->ip_ver), pk->sport);
@@ -1333,7 +1333,7 @@ static void flow_dispatch(struct packet_data* pk) {
 
         if (f->req_len < MAX_FLOW_DATA && pk->pay_len) {
 
-          u32 read_amt = MIN(pk->pay_len, MAX_FLOW_DATA - f->req_len);
+          uint32_t read_amt = MIN(pk->pay_len, MAX_FLOW_DATA - f->req_len);
 
           f->request = ck_realloc_kb(f->request, f->req_len + read_amt + 1);
           memcpy(f->request + f->req_len, pk->payload, read_amt);
@@ -1363,7 +1363,7 @@ static void flow_dispatch(struct packet_data* pk) {
 
         if (f->resp_len < MAX_FLOW_DATA && pk->pay_len) {
 
-          u32 read_amt = MIN(pk->pay_len, MAX_FLOW_DATA - f->resp_len);
+          uint32_t read_amt = MIN(pk->pay_len, MAX_FLOW_DATA - f->resp_len);
 
           f->response = ck_realloc_kb(f->response, f->resp_len + read_amt + 1);
           memcpy(f->response + f->resp_len, pk->payload, read_amt);
@@ -1406,14 +1406,14 @@ static void flow_dispatch(struct packet_data* pk) {
 
 /* Add NAT score, check if alarm due. */
 
-void add_nat_score(u8 to_srv, struct packet_flow* f, u16 reason, u8 score) {
+void add_nat_score(uint8_t to_srv, struct packet_flow* f, uint16_t reason, uint8_t score) {
 
-  static u8 rea[1024];
+  static uint8_t rea[1024];
 
   struct host_data* hd;
-  u8 *scores, *rptr = rea;
-  u32 i;
-  u8  over_5 = 0, over_2 = 0, over_1 = 0, over_0 = 0;
+  uint8_t *scores, *rptr = rea;
+  uint32_t i;
+  uint8_t  over_5 = 0, over_2 = 0, over_1 = 0, over_0 = 0;
 
   if (to_srv) {
 
@@ -1494,10 +1494,10 @@ void add_nat_score(u8 to_srv, struct packet_flow* f, u16 reason, u8 score) {
 
 /* Verify if tool class (called from modules). */
 
-void verify_tool_class(u8 to_srv, struct packet_flow* f, u32* sys, u32 sys_cnt) {
+void verify_tool_class(uint8_t to_srv, struct packet_flow* f, uint32_t* sys, uint32_t sys_cnt) {
 
   struct host_data* hd;
-  u32 i;
+  uint32_t i;
 
   if (to_srv) hd = f->client; else hd = f->server;
 

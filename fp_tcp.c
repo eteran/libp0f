@@ -31,12 +31,12 @@
 /* TCP signature buckets: */
 
 static struct tcp_sig_record* sigs[2][SIG_BUCKETS];
-static u32 sig_cnt[2][SIG_BUCKETS];
+static uint32_t sig_cnt[2][SIG_BUCKETS];
 
 
 /* Figure out what the TTL distance might have been for an unknown sig. */
 
-static u8 guess_dist(u8 ttl) {
+static uint8_t guess_dist(uint8_t ttl) {
   if (ttl <= 32) return 32 - ttl;
   if (ttl <= 64) return 64 - ttl;
   if (ttl <= 128) return 128 - ttl;
@@ -47,10 +47,10 @@ static u8 guess_dist(u8 ttl) {
 /* Figure out if window size is a multiplier of MSS or MTU. We don't take window
    scaling into account, because neither do TCP stack developers. */
 
-static s16 detect_win_multi(struct tcp_sig* ts, u8* use_mtu, u16 syn_mss) {
+static int16_t detect_win_multi(struct tcp_sig* ts, uint8_t* use_mtu, uint16_t syn_mss) {
 
-  u16 win = ts->win;
-  s32 mss = ts->mss, mss12 = mss - 12;
+  uint16_t win = ts->win;
+  int32_t mss = ts->mss, mss12 = mss - 12;
 
   if (!win || mss < 100 || ts->win_type != WIN_TYPE_NORMAL)
     return -1;
@@ -108,17 +108,17 @@ static s16 detect_win_multi(struct tcp_sig* ts, u8* use_mtu, u16 syn_mss) {
 
 /* See if any of the p0f.fp signatures matches the collected data. */
 
-static void tcp_find_match(u8 to_srv, struct tcp_sig* ts, u8 dupe_det,
-                           u16 syn_mss) {
+static void tcp_find_match(uint8_t to_srv, struct tcp_sig* ts, uint8_t dupe_det,
+                           uint16_t syn_mss) {
 
   struct tcp_sig_record* fmatch = NULL;
   struct tcp_sig_record* gmatch = NULL;
 
-  u32 bucket = ts->opt_hash % SIG_BUCKETS;
-  u32 i;
+  uint32_t bucket = ts->opt_hash % SIG_BUCKETS;
+  uint32_t i;
 
-  u8  use_mtu = 0;
-  s16 win_multi = detect_win_multi(ts, &use_mtu, syn_mss);
+  uint8_t  use_mtu = 0;
+  int16_t win_multi = detect_win_multi(ts, &use_mtu, syn_mss);
 
   CP(sigs[to_srv][bucket]);
 
@@ -127,8 +127,8 @@ static void tcp_find_match(u8 to_srv, struct tcp_sig* ts, u8 dupe_det,
     struct tcp_sig_record* ref = sigs[to_srv][bucket] + i;
     struct tcp_sig* refs = CP(ref->sig);
 
-    u8 fuzzy = 0;
-    u32 ref_quirks = refs->quirks;
+    uint8_t fuzzy = 0;
+    uint32_t ref_quirks = refs->quirks;
 
     if (ref->sig->opt_hash != ts->opt_hash) continue;
 
@@ -142,7 +142,7 @@ static void tcp_find_match(u8 to_srv, struct tcp_sig* ts, u8 dupe_det,
 
     if (ref_quirks != ts->quirks) {
 
-      u32 deleted = (ref_quirks ^ ts->quirks) & ref_quirks,
+      uint32_t deleted = (ref_quirks ^ ts->quirks) & ref_quirks,
           added = (ref_quirks ^ ts->quirks) & ts->quirks;
 
       /* If there is a difference in quirks, but it amounts to 'df' or 'id+'
@@ -276,18 +276,18 @@ static void tcp_find_match(u8 to_srv, struct tcp_sig* ts, u8 dupe_det,
 /* Parse TCP-specific bits and register a signature read from p0f.fp. This
    function is too long. */
 
-void tcp_register_sig(u8 to_srv, u8 generic, s32 sig_class, u32 sig_name,
-                      u8* sig_flavor, u32 label_id, u32* sys, u32 sys_cnt,
-                      u8* val, u32 line_no) {
+void tcp_register_sig(uint8_t to_srv, uint8_t generic, int32_t sig_class, uint32_t sig_name,
+                      uint8_t* sig_flavor, uint32_t label_id, uint32_t* sys, uint32_t sys_cnt,
+                      uint8_t* val, uint32_t line_no) {
 
-  s8  ver, win_type, pay_class;
-  u8  opt_layout[MAX_TCP_OPT];
-  u8  opt_cnt = 0, bad_ttl = 0;
+  int8_t  ver, win_type, pay_class;
+  uint8_t  opt_layout[MAX_TCP_OPT];
+  uint8_t  opt_cnt = 0, bad_ttl = 0;
 
-  s32 ittl, olen, mss, win, scale, opt_eol_pad = 0;
-  u32 quirks = 0, bucket, opt_hash;
+  int32_t ittl, olen, mss, win, scale, opt_eol_pad = 0;
+  uint32_t quirks = 0, bucket, opt_hash;
 
-  u8* nxt;
+  uint8_t* nxt;
 
   struct tcp_sig* tsig;
   struct tcp_sig_record* trec;
@@ -324,7 +324,7 @@ void tcp_register_sig(u8 to_srv, u8 generic, s32 sig_class, u32 sig_name,
 
   } else if (*nxt == '+') {
 
-    s32 ittl_add;
+    int32_t ittl_add;
 
     nxt++;
     while (isdigit(*nxt)) nxt++;
@@ -510,7 +510,7 @@ void tcp_register_sig(u8 to_srv, u8 generic, s32 sig_class, u32 sig_name,
 
     } else if (*val == '?') {
 
-      s32 optno;
+      int32_t optno;
 
       val++;
       nxt = val;
@@ -758,18 +758,18 @@ static void packet_to_sig(struct packet_data* pk, struct tcp_sig* ts) {
 
 /* Dump unknown signature. */
 
-static u8* dump_sig(struct packet_data* pk, struct tcp_sig* ts, u16 syn_mss) {
+static uint8_t* dump_sig(struct packet_data* pk, struct tcp_sig* ts, uint16_t syn_mss) {
 
-  static u8* ret;
-  u32 rlen = 0;
+  static uint8_t* ret;
+  uint32_t rlen = 0;
 
-  u8  win_mtu;
-  s16 win_m;
-  u32 i;
-  u8  dist = guess_dist(pk->ttl);
+  uint8_t  win_mtu;
+  int16_t win_m;
+  uint32_t i;
+  uint8_t  dist = guess_dist(pk->ttl);
 
 #define RETF(_par...) do { \
-    s32 _len = snprintf(NULL, 0, _par); \
+    int32_t _len = snprintf(NULL, 0, _par); \
     if (_len < 0) FATAL("Whoa, snprintf() fails?!"); \
     ret = DFL_ck_realloc_kb(ret, rlen + _len + 1); \
     snprintf((char*)ret + rlen, _len + 1, _par); \
@@ -835,7 +835,7 @@ static u8* dump_sig(struct packet_data* pk, struct tcp_sig* ts, u16 syn_mss) {
 
   if (pk->quirks) {
 
-    u8 sp = 0;
+    uint8_t sp = 0;
 
 #define MAYBE_CM(_str) do { \
     if (sp) RETF("," _str); else RETF(_str); \
@@ -875,10 +875,10 @@ static u8* dump_sig(struct packet_data* pk, struct tcp_sig* ts, u16 syn_mss) {
 
 /* Dump signature-related flags. */
 
-static u8* dump_flags(struct packet_data* pk, struct tcp_sig* ts) {
+static uint8_t* dump_flags(struct packet_data* pk, struct tcp_sig* ts) {
 
-  static u8* ret;
-  u32 rlen = 0;
+  static uint8_t* ret;
+  uint32_t rlen = 0;
 
   RETF("");
 
@@ -893,7 +893,7 @@ static u8* dump_flags(struct packet_data* pk, struct tcp_sig* ts) {
   if (ts->dist > MAX_DIST) RETF(" excess_dist");
   if (pk->tos) RETF(" tos:0x%02x", pk->tos);
 
-  if (*ret) return ret + 1; else return (u8*)"none";
+  if (*ret) return ret + 1; else return (uint8_t*)"none";
 
 #undef RETF
 
@@ -903,13 +903,13 @@ static u8* dump_flags(struct packet_data* pk, struct tcp_sig* ts) {
 /* Compare current signature with historical data, draw conclusions. This
    is called only for OS sigs. */
 
-static void score_nat(u8 to_srv, struct tcp_sig* sig, struct packet_flow* f) {
+static void score_nat(uint8_t to_srv, struct tcp_sig* sig, struct packet_flow* f) {
 
   struct host_data* hd;
   struct tcp_sig* ref;
-  u8  score = 0, diff_already = 0;
-  u16 reason = 0;
-  s32 ttl_diff;
+  uint8_t  score = 0, diff_already = 0;
+  uint16_t reason = 0;
+  int32_t ttl_diff;
 
   if (to_srv) { 
 
@@ -1055,7 +1055,7 @@ static void score_nat(u8 to_srv, struct tcp_sig* sig, struct packet_flow* f) {
 
 #define ABS(_x) ((_x) < 0 ? -(_x) : (_x))
 
-  ttl_diff = ((s16)sig->ttl) - ref->ttl;
+  ttl_diff = ((int16_t)sig->ttl) - ref->ttl;
 
   if (!diff_already && ttl_diff && (!sig->matched || !sig->matched->bad_ttl) &&
       (!ref->matched || !ref->matched->bad_ttl) && (sig->dist <= NEAR_TTL_LIMIT ||
@@ -1101,17 +1101,17 @@ static void score_nat(u8 to_srv, struct tcp_sig* sig, struct packet_flow* f) {
 
   if (score && sig->ts1 && ref->ts1) {
  
-    u64 ms_diff = sig->recv_ms - ref->recv_ms;
+    uint64_t ms_diff = sig->recv_ms - ref->recv_ms;
 
     /* Require a timestamp within the last day; if the apparent TS progression
        is much higher than 1 kHz, complain. */
 
     if (ms_diff < MAX_NAT_TS) {
 
-      u64 use_ms  = (ms_diff < TSTAMP_GRACE) ? TSTAMP_GRACE : ms_diff;
-      u64 max_ts  = use_ms * MAX_TSCALE / 1000;
+      uint64_t use_ms  = (ms_diff < TSTAMP_GRACE) ? TSTAMP_GRACE : ms_diff;
+      uint64_t max_ts  = use_ms * MAX_TSCALE / 1000;
 
-      u32 ts_diff  = sig->ts1 - ref->ts1;
+      uint32_t ts_diff  = sig->ts1 - ref->ts1;
 
       if (ts_diff > max_ts && (ms_diff >= TSTAMP_GRACE || ~ts_diff > max_ts)) {
 
@@ -1157,7 +1157,7 @@ log_and_update:
 
 /* Fingerprint SYN or SYN+ACK. */
 
-struct tcp_sig* fingerprint_tcp(u8 to_srv, struct packet_data* pk,
+struct tcp_sig* fingerprint_tcp(uint8_t to_srv, struct packet_data* pk,
                                 struct packet_flow* f) {
 
   struct tcp_sig* sig;
@@ -1184,7 +1184,7 @@ struct tcp_sig* fingerprint_tcp(u8 to_srv, struct packet_data* pk,
 
     OBSERVF((m->class_id == -1 || f->sendsyn) ? "app" : "os", "%s%s%s",
             fp_os_names[m->name_id], m->flavor ? " " : "",
-            m->flavor ? m->flavor : (u8*)"");
+            m->flavor ? m->flavor : (uint8_t*)"");
 
   } else {
 
@@ -1234,13 +1234,13 @@ struct tcp_sig* fingerprint_tcp(u8 to_srv, struct packet_data* pk,
 /* Perform uptime detection. This is the only FP function that gets called not
    only on SYN or SYN+ACK, but also on ACK traffic. */
 
-void check_ts_tcp(u8 to_srv, struct packet_data* pk, struct packet_flow* f) {
+void check_ts_tcp(uint8_t to_srv, struct packet_data* pk, struct packet_flow* f) {
 
-  u32    ts_diff;
-  u64    ms_diff;
+  uint32_t    ts_diff;
+  uint64_t    ms_diff;
 
-  u32    freq;
-  u32    up_min, up_mod_days;
+  uint32_t    freq;
+  uint32_t    up_min, up_mod_days;
 
   double ffreq;
 

@@ -64,19 +64,19 @@
 #  define O_LARGEFILE 0
 #endif /* !O_LARGEFILE */
 
-static u8 *use_iface,                   /* Interface to listen on             */
+static uint8_t *use_iface,                   /* Interface to listen on             */
           *orig_rule,                   /* Original filter rule               */
           *switch_user,                 /* Target username                    */
           *log_file,                    /* Binary log file name               */
           *api_sock,                    /* API socket file name               */
           *fp_file;                     /* Location of p0f.fp                 */
 
-u8* read_file;                          /* File to read pcap data from        */
+uint8_t* read_file;                          /* File to read pcap data from        */
 
-static u32
+static uint32_t
   api_max_conn    = API_MAX_CONN;       /* Maximum number of API connections  */
 
-u32
+uint32_t
   max_conn        = MAX_CONN,           /* Connection entry count limit       */
   max_hosts       = MAX_HOSTS,          /* Host cache entry count limit       */
   conn_max_age    = CONN_MAX_AGE,       /* Maximum age of a connection entry  */
@@ -84,30 +84,30 @@ u32
 
 static struct api_client *api_cl;       /* Array with API client state        */
           
-static s32 null_fd = -1,                /* File descriptor of /dev/null       */
+static int32_t null_fd = -1,                /* File descriptor of /dev/null       */
            api_fd = -1;                 /* API socket descriptor              */
 
 static FILE* lf;                        /* Log file stream                    */
 
-static u8 stop_soon;                    /* Ctrl-C or so pressed?              */
+static uint8_t stop_soon;                    /* Ctrl-C or so pressed?              */
 
-u8 daemon_mode;                         /* Running in daemon mode?            */
+uint8_t daemon_mode;                         /* Running in daemon mode?            */
 
-static u8 set_promisc;                  /* Use promiscuous mode?              */
+static uint8_t set_promisc;                  /* Use promiscuous mode?              */
          
 static pcap_t *pt;                      /* PCAP capture thingy                */
 
-s32 link_type;                          /* PCAP link type                     */
+int32_t link_type;                          /* PCAP link type                     */
 
-u32 hash_seed;                          /* Hash seed                          */
+uint32_t hash_seed;                          /* Hash seed                          */
 
-static u8 obs_fields;                   /* No of pending observation fields   */
+static uint8_t obs_fields;                   /* No of pending observation fields   */
 
 /* Memory allocator data: */
 
 #ifdef DEBUG_BUILD
 struct TRK_obj* TRK[ALLOC_BUCKETS];
-u32 TRK_cnt[ALLOC_BUCKETS];
+uint32_t TRK_cnt[ALLOC_BUCKETS];
 #endif /* DEBUG_BUILD */
 
 #define LOGF(_x...) fprintf(lf, _x)
@@ -165,7 +165,7 @@ static void usage(void) {
 
 static void get_hash_seed(void) {
 
-  s32 f = open("/dev/urandom", O_RDONLY);
+  int32_t f = open("/dev/urandom", O_RDONLY);
 
   if (f < 0) PFATAL("Cannot open /dev/urandom for reading.");
 
@@ -187,7 +187,7 @@ static void get_hash_seed(void) {
 
 static void close_spare_fds(void) {
 
-  s32 i, closed = 0;
+  int32_t i, closed = 0;
   DIR* d;
   struct dirent* de;
 
@@ -218,7 +218,7 @@ static void close_spare_fds(void) {
 static void open_log(void) {
 
   struct stat st;
-  s32 log_fd;
+  int32_t log_fd;
 
   log_fd = open((char*)log_file, O_WRONLY | O_APPEND | O_NOFOLLOW | O_LARGEFILE);
 
@@ -255,8 +255,8 @@ static void open_log(void) {
 
 static void open_api(void) {
 
-  s32 old_umask;
-  u32 i;
+  int32_t old_umask;
+  uint32_t i;
 
   struct sockaddr_un u;
   struct stat st;
@@ -307,7 +307,7 @@ static void open_api(void) {
 
 /* Open log entry. */
 
-void start_observation(char* keyword, u8 field_cnt, u8 to_srv,
+void start_observation(char* keyword, uint8_t field_cnt, uint8_t to_srv,
                        struct packet_flow* f) {
 
   if (obs_fields) FATAL("Premature end of observation.");
@@ -328,7 +328,7 @@ void start_observation(char* keyword, u8 field_cnt, u8 to_srv,
 
   if (log_file) {
 
-    u8 tmp[64];
+    uint8_t tmp[64];
 
     time_t ut = get_unix_time();
     struct tm* lt = localtime(&ut);
@@ -350,14 +350,14 @@ void start_observation(char* keyword, u8 field_cnt, u8 to_srv,
 
 /* Add log item. */
 
-void add_observation_field(char* key, u8* value) {
+void add_observation_field(char* key, uint8_t* value) {
 
   if (!obs_fields) FATAL("Unexpected observation field ('%s').", key);
 
   if (!daemon_mode)
-    SAYF("| %-8s = %s\n", key, value ? value : (u8*)"???");
+    SAYF("| %-8s = %s\n", key, value ? value : (uint8_t*)"???");
 
-  if (log_file) LOGF("|%s=%s", key, value ? value : (u8*)"???");
+  if (log_file) LOGF("|%s=%s", key, value ? value : (uint8_t*)"???");
 
   obs_fields--;
 
@@ -378,7 +378,7 @@ static void list_interfaces(void) {
 
   char pcap_err[PCAP_ERRBUF_SIZE];
   pcap_if_t *dev;
-  u8 i = 0;
+  uint8_t i = 0;
 
   /* There is a bug in several years' worth of libpcap releases that causes it
      to SEGV here if /sys/class/net is not readable. See http://goo.gl/nEnGx */
@@ -408,9 +408,9 @@ static void list_interfaces(void) {
     if (a) {
 
       if (a->addr->sa_family == PF_INET)
-        SAYF("     IP address  : %s\n", addr_to_str(((u8*)a->addr) + 4, IP_VER4));
+        SAYF("     IP address  : %s\n", addr_to_str(((uint8_t*)a->addr) + 4, IP_VER4));
       else
-        SAYF("     IP address  : %s\n", addr_to_str(((u8*)a->addr) + 8, IP_VER6));
+        SAYF("     IP address  : %s\n", addr_to_str(((uint8_t*)a->addr) + 8, IP_VER6));
 
      } else SAYF("     IP address  : (none)\n");
 
@@ -428,7 +428,7 @@ static void list_interfaces(void) {
 
 /* List PCAP-recognized interfaces */
 
-static u8* find_interface(int num) {
+static uint8_t* find_interface(int num) {
 
   char pcap_err[PCAP_ERRBUF_SIZE];
   pcap_if_t *dev;
@@ -439,7 +439,7 @@ static u8* find_interface(int num) {
   do {
 
     if (!num--) {
-      u8* ret = DFL_ck_strdup((char*)dev->name);
+      uint8_t* ret = DFL_ck_strdup((char*)dev->name);
       pcap_freealldevs(dev);
       return ret;
     }
@@ -458,7 +458,7 @@ static u8* find_interface(int num) {
 static void prepare_pcap(void) {
 
   char pcap_err[PCAP_ERRBUF_SIZE];
-  u8* orig_iface = use_iface;
+  uint8_t* orig_iface = use_iface;
 
   if (read_file) {
 
@@ -485,7 +485,7 @@ static void prepare_pcap(void) {
          Also, this returns something stupid on Windows, but hey... */
      
       if (!access("/sys/class/net", R_OK | X_OK) || errno == ENOENT)
-        use_iface = (u8*)pcap_lookupdev(pcap_err);
+        use_iface = (uint8_t*)pcap_lookupdev(pcap_err);
 
       if (!use_iface)
         FATAL("libpcap is out of ideas; use -i to specify interface.");
@@ -538,8 +538,8 @@ static void prepare_bpf(void) {
 
   struct bpf_program flt;
 
-  u8*  final_rule;
-  u8   vlan_support;
+  uint8_t*  final_rule;
+  uint8_t   vlan_support;
 
   /* VLAN matching is somewhat brain-dead: you need to request it explicitly,
      and it alters the semantics of the remainder of the expression. */
@@ -551,9 +551,9 @@ retry_no_vlan:
   if (!orig_rule) {
 
     if (vlan_support) {
-      final_rule = (u8*)"tcp or (vlan and tcp)";
+      final_rule = (uint8_t*)"tcp or (vlan and tcp)";
     } else {
-      final_rule = (u8*)"tcp";
+      final_rule = (uint8_t*)"tcp";
     }
 
   } else {
@@ -609,7 +609,7 @@ retry_no_vlan:
   } else {
 
     SAYF("[+] Custom filtering rule enabled: %s%s\n",
-         orig_rule ? orig_rule : (u8*)"tcp",
+         orig_rule ? orig_rule : (uint8_t*)"tcp",
          vlan_support ? " [+VLAN]" : "");
 
     ck_free(final_rule);
@@ -669,7 +669,7 @@ static void drop_privs(void) {
 
 static void fork_off(void) {
 
-  s32 npid;
+  int32_t npid;
 
   fflush(0);
 
@@ -731,8 +731,8 @@ static void abort_handler(int sig) {
 
 /* Regenerate pollfd data for poll() */
 
-static u32 regen_pfds(struct pollfd* pfds, struct api_client** ctable) {
-  u32 i, count = 2;
+static uint32_t regen_pfds(struct pollfd* pfds, struct api_client** ctable) {
+  uint32_t i, count = 2;
 
   pfds[0].fd     = pcap_fileno(pt);
   pfds[0].events = (POLLIN | POLLERR | POLLHUP);
@@ -786,7 +786,7 @@ static void live_event_loop(void) {
 
   struct pollfd *pfds;
   struct api_client** ctable;
-  u32 pfd_count;
+  uint32_t pfd_count;
 
   /* We need room for pcap, and possibly api_fd + api_clients. */
 
@@ -803,8 +803,8 @@ static void live_event_loop(void) {
 
   while (!stop_soon) {
 
-    s32 pret, i;
-    u32 cur;
+    int32_t pret, i;
+    uint32_t cur;
 
     /* We had a 250 ms timeout to keep Ctrl-C responsive without resortng
        to silly sigaction hackery or unsafe signal handler code. Unfortunately,
@@ -979,7 +979,7 @@ poll_again:
 
   while (!stop_soon) {
 
-    s32 ret = pcap_dispatch(pt, -1, (pcap_handler)parse_packet, 0);
+    int32_t ret = pcap_dispatch(pt, -1, (pcap_handler)parse_packet, 0);
 
     if (ret < 0) return;
 
@@ -1018,7 +1018,7 @@ static void offline_event_loop(void) {
 
 int main(int argc, char** argv) {
 
-  s32 r;
+  int32_t r;
 
   setlinebuf(stdout);
 
@@ -1068,7 +1068,7 @@ int main(int argc, char** argv) {
       if (fp_file)
         FATAL("Multiple -f options not supported.");
 
-      fp_file = (u8*)optarg;
+      fp_file = (uint8_t*)optarg;
       break;
 
     case 'i':
@@ -1076,7 +1076,7 @@ int main(int argc, char** argv) {
       if (use_iface)
         FATAL("Multiple -i options not supported (try '-i any').");
 
-      use_iface = (u8*)optarg;
+      use_iface = (uint8_t*)optarg;
 
       break;
 
@@ -1097,7 +1097,7 @@ int main(int argc, char** argv) {
       if (log_file)
         FATAL("Multiple -o options not supported.");
 
-      log_file = (u8*)optarg;
+      log_file = (uint8_t*)optarg;
 
       break;
 
@@ -1114,7 +1114,7 @@ int main(int argc, char** argv) {
       if (read_file)
         FATAL("Multiple -r options not supported.");
 
-      read_file = (u8*)optarg;
+      read_file = (uint8_t*)optarg;
 
       break;
 
@@ -1129,7 +1129,7 @@ int main(int argc, char** argv) {
       if (api_sock) 
         FATAL("Multiple -s options not supported.");
 
-      api_sock = (u8*)optarg;
+      api_sock = (uint8_t*)optarg;
 
       break;
 
@@ -1152,7 +1152,7 @@ int main(int argc, char** argv) {
       if (switch_user)
         FATAL("Split personality mode not supported.");
 
-      switch_user = (u8*)optarg;
+      switch_user = (uint8_t*)optarg;
 
       break;
 
@@ -1162,7 +1162,7 @@ int main(int argc, char** argv) {
 
   if (optind < argc) {
 
-    if (optind + 1 == argc) orig_rule = (u8*)argv[optind];
+    if (optind + 1 == argc) orig_rule = (uint8_t*)argv[optind];
     else FATAL("Filter rule must be a single parameter (use quotes).");
 
   }
@@ -1204,7 +1204,7 @@ int main(int argc, char** argv) {
 
   http_init();
 
-  read_config(fp_file ? fp_file : (u8*)FP_FILE);
+  read_config(fp_file ? fp_file : (uint8_t*)FP_FILE);
 
   prepare_pcap();
   prepare_bpf();

@@ -31,24 +31,24 @@
 #include "fp_http.h"
 #include "readfp.h"
 
-static u32 sig_cnt;                     /* Total number of p0f.fp sigs        */
+static uint32_t sig_cnt;                     /* Total number of p0f.fp sigs        */
 
-static u8 state = CF_NEED_SECT,         /* Parser state (CF_NEED_*)           */
+static uint8_t state = CF_NEED_SECT,         /* Parser state (CF_NEED_*)           */
           mod_type,                     /* Current module (CF_MOD_*)          */
           mod_to_srv,                   /* Traffic direction                  */
           generic;                      /* Generic signature?                 */
 
-static s32 sig_class;                   /* Signature class ID (-1 = userland) */
-static u32 sig_name;                    /* Signature name                     */
-static u8* sig_flavor;                  /* Signature flavor                   */
+static int32_t sig_class;                   /* Signature class ID (-1 = userland) */
+static uint32_t sig_name;                    /* Signature name                     */
+static uint8_t* sig_flavor;                  /* Signature flavor                   */
 
-static u32* cur_sys;                    /* Current 'sys' values               */
-static u32  cur_sys_cnt;                /* Number of 'sys' entries            */
+static uint32_t* cur_sys;                    /* Current 'sys' values               */
+static uint32_t  cur_sys_cnt;                /* Number of 'sys' entries            */
 
-u8 **fp_os_classes,                     /* Map of OS classes                  */
+uint8_t **fp_os_classes,                     /* Map of OS classes                  */
    **fp_os_names;                       /* Map of OS names                    */
 
-static u32 class_cnt,                   /* Sizes for maps                     */
+static uint32_t class_cnt,                   /* Sizes for maps                     */
            name_cnt,
            label_id,                    /* Current label ID                   */
            line_no;                     /* Current line number                */
@@ -56,11 +56,11 @@ static u32 class_cnt,                   /* Sizes for maps                     */
 
 /* Parse 'classes' parameter by populating fp_os_classes. */
 
-static void config_parse_classes(u8* val) {
+static void config_parse_classes(uint8_t* val) {
 
   while (*val) {
 
-    u8* nxt;
+    uint8_t* nxt;
 
     while (isblank(*val) || *val == ',') val++;
 
@@ -71,7 +71,7 @@ static void config_parse_classes(u8* val) {
     if (nxt == val || (*nxt && *nxt != ','))
       FATAL("Malformed class entry in line %u.", line_no);
 
-    fp_os_classes = DFL_ck_realloc(fp_os_classes, (class_cnt + 1) * sizeof(u8*));
+    fp_os_classes = DFL_ck_realloc(fp_os_classes, (class_cnt + 1) * sizeof(uint8_t*));
 
     fp_os_classes[class_cnt++] = DFL_ck_memdup_str(val, nxt - val);
 
@@ -84,9 +84,9 @@ static void config_parse_classes(u8* val) {
 
 /* Look up or create OS or application id. */
 
-u32 lookup_name_id(u8* name, u8 len) {
+uint32_t lookup_name_id(uint8_t* name, uint8_t len) {
 
-  u32 i;
+  uint32_t i;
 
   for (i = 0; i < name_cnt; i++)
     if (!strncasecmp((char*)name, (char*)fp_os_names[i], len)
@@ -96,7 +96,7 @@ u32 lookup_name_id(u8* name, u8 len) {
 
     sig_name = name_cnt;
 
-    fp_os_names = DFL_ck_realloc(fp_os_names, (name_cnt + 1) * sizeof(u8*));
+    fp_os_names = DFL_ck_realloc(fp_os_names, (name_cnt + 1) * sizeof(uint8_t*));
     fp_os_names[name_cnt++] = DFL_ck_memdup_str(name, len);
 
   }
@@ -108,10 +108,10 @@ u32 lookup_name_id(u8* name, u8 len) {
 
 /* Parse 'label' parameter by looking up ID and recording name / flavor. */
 
-static void config_parse_label(u8* val) {
+static void config_parse_label(uint8_t* val) {
 
-  u8* nxt;
-  u32 i;
+  uint8_t* nxt;
+  uint32_t i;
 
   /* Simplified handling for [mtu] signatures. */
 
@@ -172,7 +172,7 @@ static void config_parse_label(u8* val) {
 
 /* Parse 'sys' parameter into cur_sys[]. */
 
-static void config_parse_sys(u8* val) {
+static void config_parse_sys(uint8_t* val) {
 
   if (cur_sys) {
     cur_sys = NULL;
@@ -181,9 +181,9 @@ static void config_parse_sys(u8* val) {
 
   while (*val) {
 
-    u8* nxt;
-    u8  is_cl = 0, orig;
-    u32 i;
+    uint8_t* nxt;
+    uint8_t  is_cl = 0, orig;
+    uint32_t i;
 
     while (isblank(*val) || *val == ',') val++;
 
@@ -215,7 +215,7 @@ static void config_parse_sys(u8* val) {
         if (!strcasecmp((char*)val, (char*)fp_os_names[i])) break;
 
       if (i == name_cnt) {
-        fp_os_names = DFL_ck_realloc(fp_os_names, (name_cnt + 1) * sizeof(u8*));
+        fp_os_names = DFL_ck_realloc(fp_os_names, (name_cnt + 1) * sizeof(uint8_t*));
         fp_os_names[name_cnt++] = DFL_ck_memdup_str(val, nxt - val);
       }
 
@@ -234,15 +234,15 @@ static void config_parse_sys(u8* val) {
 
 /* Read p0f.fp line, dispatching it to fingerprinting modules as necessary. */
 
-static void config_parse_line(u8* line) {
+static void config_parse_line(uint8_t* line) {
 
-  u8 *val,*eon;
+  uint8_t *val,*eon;
 
   /* Special handling for [module:direction]... */
 
   if (*line == '[') {
 
-    u8* dir;
+    uint8_t* dir;
 
     line++;
 
@@ -256,7 +256,7 @@ static void config_parse_line(u8* line) {
 
     }
 
-    dir = (u8*)strchr((char*)line, ':');
+    dir = (uint8_t*)strchr((char*)line, ':');
 
     if (!dir) FATAL("Malformed section identifier in line %u.", line_no);
 
@@ -382,11 +382,11 @@ static void config_parse_line(u8* line) {
 
 /* Top-level file parsing. */
 
-void read_config(u8* fname) {
+void read_config(uint8_t* fname) {
 
-  s32 f;
+  int32_t f;
   struct stat st;
-  u8  *data, *cur;
+  uint8_t  *data, *cur;
 
   f = open((char*)fname, O_RDONLY);
   if (f < 0) PFATAL("Cannot open '%s' for reading.", fname);
@@ -411,7 +411,7 @@ void read_config(u8* fname) {
 
   while (1) {
 
-    u8 *eol;
+    uint8_t *eol;
 
     line_no++;
 
@@ -422,7 +422,7 @@ void read_config(u8* fname) {
 
     if (*cur != ';' && cur != eol) {
 
-      u8* line = ck_memdup_str(cur, eol - cur);
+      uint8_t* line = ck_memdup_str(cur, eol - cur);
 
       config_parse_line(line);
 

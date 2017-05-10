@@ -33,30 +33,30 @@
 #include "fp_http.h"
 #include "languages.h"
 
-static u8** hdr_names;                 /* List of header names by ID         */
-static u32  hdr_cnt;                   /* Number of headers registered       */
+static uint8_t** hdr_names;                 /* List of header names by ID         */
+static uint32_t  hdr_cnt;                   /* Number of headers registered       */
 
-static u32* hdr_by_hash[SIG_BUCKETS];  /* Hashed header names                */
-static u32  hbh_cnt[SIG_BUCKETS];      /* Number of headers in bucket        */
+static uint32_t* hdr_by_hash[SIG_BUCKETS];  /* Hashed header names                */
+static uint32_t  hbh_cnt[SIG_BUCKETS];      /* Number of headers in bucket        */
 
 /* Signatures aren't bucketed due to the complex matching used; but we use
    Bloom filters to go through them quickly. */
 
 static struct http_sig_record* sigs[2];
-static u32 sig_cnt[2];
+static uint32_t sig_cnt[2];
 
 static struct ua_map_record* ua_map;   /* Mappings between U-A and OS        */
-static u32 ua_map_cnt;
+static uint32_t ua_map_cnt;
 
-#define SLOF(_str) (u8*)_str, strlen((char*)_str)
+#define SLOF(_str) (uint8_t*)_str, strlen((char*)_str)
 
 
 /* Ghetto Bloom filter 4-out-of-64 bitmask generator for adding 32-bit header
    IDs to a set. We expect around 10 members in a set. */
 
-static inline u64 bloom4_64(u32 val) {
-  u32 hash = hash32(&val, 4, hash_seed);
-  u64 ret;
+static inline uint64_t bloom4_64(uint32_t val) {
+  uint32_t hash = hash32(&val, 4, hash_seed);
+  uint64_t ret;
   ret = (1LL << (hash & 63));
   ret ^= (1LL << ((hash >> 8) & 63));
   ret ^= (1LL << ((hash >> 16) & 63));
@@ -67,12 +67,12 @@ static inline u64 bloom4_64(u32 val) {
 
 /* Look up or register new header */
 
-static s32 lookup_hdr(u8* name, u32 len, u8 create) {
+static int32_t lookup_hdr(uint8_t* name, uint32_t len, uint8_t create) {
 
-  u32  bucket = hash32(name, len, hash_seed) % SIG_BUCKETS;
+  uint32_t  bucket = hash32(name, len, hash_seed) % SIG_BUCKETS;
 
-  u32* p = hdr_by_hash[bucket];
-  u32  i = hbh_cnt[bucket];
+  uint32_t* p = hdr_by_hash[bucket];
+  uint32_t  i = hbh_cnt[bucket];
 
   while (i--) {
     if (!memcmp(hdr_names[*p], name, len) /* ASAN won't like this... */ &&
@@ -84,7 +84,7 @@ static s32 lookup_hdr(u8* name, u32 len, u8 create) {
 
   if (!create) return -1;
 
-  hdr_names = DFL_ck_realloc(hdr_names, (hdr_cnt + 1) * sizeof(u8*));
+  hdr_names = DFL_ck_realloc(hdr_names, (hdr_cnt + 1) * sizeof(uint8_t*));
   hdr_names[hdr_cnt] = DFL_ck_memdup_str(name, len);
 
   hdr_by_hash[bucket] = DFL_ck_realloc(hdr_by_hash[bucket],
@@ -100,7 +100,7 @@ static s32 lookup_hdr(u8* name, u32 len, u8 create) {
 /* Pre-register essential headers. */
 
 void http_init(void) {
-  u32 i;
+  uint32_t i;
 
   /* Do not change - other code depends on the ordering of first 6 entries. */
 
@@ -159,16 +159,16 @@ void http_init(void) {
 
 /* Find match for a signature. */
 
-static void http_find_match(u8 to_srv, struct http_sig* ts, u8 dupe_det) {
+static void http_find_match(uint8_t to_srv, struct http_sig* ts, uint8_t dupe_det) {
 
   struct http_sig_record* gmatch = NULL;
   struct http_sig_record* ref = sigs[to_srv];
-  u32 cnt = sig_cnt[to_srv];
+  uint32_t cnt = sig_cnt[to_srv];
 
   while (cnt--) {
 
     struct http_sig* rs = ref->sig;
-    u32 ts_hdr = 0, rs_hdr = 0;
+    uint32_t ts_hdr = 0, rs_hdr = 0;
 
     if (rs->http_ver != -1 && rs->http_ver != ts->http_ver) goto next_sig;
 
@@ -182,7 +182,7 @@ static void http_find_match(u8 to_srv, struct http_sig* ts, u8 dupe_det) {
 
     while (rs_hdr < rs->hdr_cnt) {
 
-      u32 orig_ts = ts_hdr;
+      uint32_t orig_ts = ts_hdr;
 
       while (rs->hdr[rs_hdr].id != ts->hdr[ts_hdr].id &&
              ts_hdr < ts->hdr_cnt) ts_hdr++;
@@ -219,7 +219,7 @@ static void http_find_match(u8 to_srv, struct http_sig* ts, u8 dupe_det) {
 
     for (rs_hdr = 0; rs_hdr < rs->miss_cnt; rs_hdr++) {
 
-      u64 miss_bloom4 = bloom4_64(rs->miss[rs_hdr]);
+      uint64_t miss_bloom4 = bloom4_64(rs->miss[rs_hdr]);
 
       if ((ts->hdr_bloom4 & miss_bloom4) != miss_bloom4) continue;
 
@@ -286,14 +286,14 @@ next_sig:
 
 /* Register new HTTP signature. */
 
-void http_register_sig(u8 to_srv, u8 generic, s32 sig_class, u32 sig_name,
-                       u8* sig_flavor, u32 label_id, u32* sys, u32 sys_cnt,
-                       u8* val, u32 line_no) {
+void http_register_sig(uint8_t to_srv, uint8_t generic, int32_t sig_class, uint32_t sig_name,
+                       uint8_t* sig_flavor, uint32_t label_id, uint32_t* sys, uint32_t sys_cnt,
+                       uint8_t* val, uint32_t line_no) {
 
   struct http_sig* hsig;
   struct http_sig_record* hrec;
 
-  u8* nxt;
+  uint8_t* nxt;
 
   hsig = DFL_ck_alloc(sizeof(struct http_sig));
 
@@ -319,8 +319,8 @@ void http_register_sig(u8 to_srv, u8 generic, s32 sig_class, u32 sig_name,
 
   while (*val != ':') {
 
-    u32 id;
-    u8 optional = 0;
+    uint32_t id;
+    uint8_t optional = 0;
 
     if (hsig->hdr_cnt >= HTTP_MAX_HDRS)
       FATAL("Too many headers listed in line %u.", line_no);
@@ -375,7 +375,7 @@ void http_register_sig(u8 to_srv, u8 generic, s32 sig_class, u32 sig_name,
 
   while (*val != ':') {
 
-    u32 id;
+    uint32_t id;
 
     if (hsig->miss_cnt >= HTTP_MAX_HDRS)
       FATAL("Too many headers listed in line %u.", line_no);
@@ -436,14 +436,14 @@ void http_register_sig(u8 to_srv, u8 generic, s32 sig_class, u32 sig_name,
 
 /* Register new HTTP signature. */
 
-void http_parse_ua(u8* val, u32 line_no) {
+void http_parse_ua(uint8_t* val, uint32_t line_no) {
 
-  u8* nxt;
+  uint8_t* nxt;
 
   while (*val) {
 
-    u32 id;
-    u8* name = NULL;
+    uint32_t id;
+    uint8_t* name = NULL;
 
     nxt = val;
     while (*nxt && (isalnum(*nxt) || strchr(NAME_CHARS, *nxt))) nxt++;
@@ -493,22 +493,22 @@ void http_parse_ua(u8* val, u32 line_no) {
 
 /* Dump a HTTP signature. */
 
-static u8* dump_sig(u8 to_srv, struct http_sig* hsig) {
+static uint8_t* dump_sig(uint8_t to_srv, struct http_sig* hsig) {
 
-  u32 i;
-  u8 had_prev = 0;
+  uint32_t i;
+  uint8_t had_prev = 0;
   struct http_id* list;
 
-  u8 tmp[HTTP_MAX_SHOW + 1];
-  u32 tpos;
+  uint8_t tmp[HTTP_MAX_SHOW + 1];
+  uint32_t tpos;
 
-  static u8* ret;
-  u32 rlen = 0;
+  static uint8_t* ret;
+  uint32_t rlen = 0;
 
-  u8* val;
+  uint8_t* val;
 
 #define RETF(...) do { \
-    s32 _len = snprintf(NULL, 0, __VA_ARGS__); \
+    int32_t _len = snprintf(NULL, 0, __VA_ARGS__); \
     if (_len < 0) FATAL("Whoa, snprintf() fails?!"); \
     ret = DFL_ck_realloc_kb(ret, rlen + _len + 1); \
     snprintf((char*)ret + rlen, _len + 1, __VA_ARGS__); \
@@ -521,7 +521,7 @@ static u8* dump_sig(u8 to_srv, struct http_sig* hsig) {
 
     if (hsig->hdr[i].id >= 0) {
 
-      u8 optional = 0;
+      uint8_t optional = 0;
 
       /* Check the "optional" list. */
 
@@ -636,10 +636,10 @@ static u8* dump_sig(u8 to_srv, struct http_sig* hsig) {
 
 /* Dump signature flags. */
 
-static u8* dump_flags(struct http_sig* hsig, struct http_sig_record* m) {
+static uint8_t* dump_flags(struct http_sig* hsig, struct http_sig_record* m) {
 
-  static u8* ret;
-  u32 rlen = 0;
+  static uint8_t* ret;
+  uint32_t rlen = 0;
 
   RETF("");
 
@@ -649,7 +649,7 @@ static u8* dump_flags(struct http_sig* hsig, struct http_sig_record* m) {
 
 #undef RETF
 
-  if (*ret) return ret + 1; else return (u8*)"none";
+  if (*ret) return ret + 1; else return (uint8_t*)"none";
 
 }
 
@@ -657,14 +657,14 @@ static u8* dump_flags(struct http_sig* hsig, struct http_sig_record* m) {
 /* Score signature differences. For unknown signatures, the presumption is that
    they identify apps, so the logic is quite different from TCP. */
 
-static void score_nat(u8 to_srv, struct packet_flow* f) {
+static void score_nat(uint8_t to_srv, struct packet_flow* f) {
 
   struct http_sig_record* m = f->http_tmp.matched;
   struct host_data* hd;
   struct http_sig* ref;
 
-  u8  score = 0, diff_already = 0;
-  u16 reason = 0;
+  uint8_t  score = 0, diff_already = 0;
+  uint16_t reason = 0;
 
   if (to_srv) {
 
@@ -775,7 +775,7 @@ static void score_nat(u8 to_srv, struct packet_flow* f) {
 
   if (to_srv && m->class_id == -1 && f->http_tmp.sw && !f->http_tmp.dishonest) {
 
-    u32 i;
+    uint32_t i;
 
     for (i = 0; i < ua_map_cnt; i++)
       if (strstr((char*)f->http_tmp.sw, (char*)ua_map[i].name)) break;
@@ -816,8 +816,8 @@ header_check:
 
   if (ref && !to_srv && ref->date && f->http_tmp.date) {
 
-    s64 recv_diff = ((s64)f->http_tmp.recv_date) - ref->recv_date;
-    s64 hdr_diff  = ((s64)f->http_tmp.date) - ref->date;
+    int64_t recv_diff = ((int64_t)f->http_tmp.recv_date) - ref->recv_date;
+    int64_t hdr_diff  = ((int64_t)f->http_tmp.date) - ref->date;
 
     if (hdr_diff < -HTTP_MAX_DATE_DIFF || 
         hdr_diff > recv_diff + HTTP_MAX_DATE_DIFF) {
@@ -843,10 +843,10 @@ header_check:
 
 /* Look up HTTP signature, create an observation. */
 
-static void fingerprint_http(u8 to_srv, struct packet_flow* f) {
+static void fingerprint_http(uint8_t to_srv, struct packet_flow* f) {
 
   struct http_sig_record* m;
-  u8* lang = NULL;
+  uint8_t* lang = NULL;
 
   http_find_match(to_srv, &f->http_tmp, 0);
 
@@ -856,15 +856,15 @@ static void fingerprint_http(u8 to_srv, struct packet_flow* f) {
 
     OBSERVF((m->class_id < 0) ? "app" : "os", "%s%s%s",
             fp_os_names[m->name_id], m->flavor ? " " : "",
-            m->flavor ? m->flavor : (u8*)"");
+            m->flavor ? m->flavor : (uint8_t*)"");
 
   } else add_observation_field("app", NULL);
 
   if (f->http_tmp.lang && isalpha(f->http_tmp.lang[0]) &&
       isalpha(f->http_tmp.lang[1]) && !isalpha(f->http_tmp.lang[2])) {
 
-    u8 lh = LANG_HASH(f->http_tmp.lang[0], f->http_tmp.lang[1]);
-    u8 pos = 0;
+    uint8_t lh = LANG_HASH(f->http_tmp.lang[0], f->http_tmp.lang[1]);
+    uint8_t pos = 0;
 
     while (languages[lh][pos]) {
       if (f->http_tmp.lang[0] == languages[lh][pos][0] &&
@@ -874,9 +874,9 @@ static void fingerprint_http(u8 to_srv, struct packet_flow* f) {
 
     if (!languages[lh][pos]) add_observation_field("lang", NULL);
       else add_observation_field("lang", 
-           (lang = (u8*)languages[lh][pos + 1]));
+           (lang = (uint8_t*)languages[lh][pos + 1]));
 
-  } else add_observation_field("lang", (u8*)"none");
+  } else add_observation_field("lang", (uint8_t*)"none");
 
   add_observation_field("params", dump_flags(&f->http_tmp, m));
 
@@ -974,7 +974,7 @@ static void fingerprint_http(u8 to_srv, struct packet_flow* f) {
 
 void free_sig_hdrs(struct http_sig* h) {
 
-  u32 i;
+  uint32_t i;
 
   for (i = 0; i < h->hdr_cnt; i++) {
     if (h->hdr[i].name) ck_free(h->hdr[i].name);
@@ -986,7 +986,7 @@ void free_sig_hdrs(struct http_sig* h) {
 
 /* Parse HTTP date field. */
 
-static u32 parse_date(u8* str) {
+static uint32_t parse_date(uint8_t* str) {
   struct tm t;
 
   if (!strptime((char*)str, "%a, %d %b %Y %H:%M:%S %Z", &t)) {
@@ -1001,21 +1001,21 @@ static u32 parse_date(u8* str) {
 
 /* Parse name=value pairs into a signature. */
 
-static u8 parse_pairs(u8 to_srv, struct packet_flow* f, u8 can_get_more) {
+static uint8_t parse_pairs(uint8_t to_srv, struct packet_flow* f, uint8_t can_get_more) {
 
-  u32 plen = to_srv ? f->req_len : f->resp_len;
+  uint32_t plen = to_srv ? f->req_len : f->resp_len;
 
-  u32 off;
+  uint32_t off;
 
   /* Try to parse name: value pairs. */
 
   while ((off = f->http_pos) < plen) {
 
-    u8* pay = to_srv ? f->request : f->response;
+    uint8_t* pay = to_srv ? f->request : f->response;
 
-    u32 nlen, vlen, vstart;
-    s32 hid;
-    u32 hcount;
+    uint32_t nlen, vlen, vstart;
+    int32_t hid;
+    uint32_t hcount;
 
     /* Empty line? Dispatch for fingerprinting! */
 
@@ -1166,7 +1166,7 @@ static u8 parse_pairs(u8 to_srv, struct packet_flow* f, u8 can_get_more) {
 
     if (vlen) {
 
-      u8* val = ck_memdup_str(pay + vstart, vlen);
+      uint8_t* val = ck_memdup_str(pay + vstart, vlen);
 
       f->http_tmp.hdr[hcount].value = val;
 
@@ -1215,7 +1215,7 @@ static u8 parse_pairs(u8 to_srv, struct packet_flow* f, u8 can_get_more) {
 /* Examine request or response; returns 1 if more data needed and plausibly can
    be read. Note that the buffer is always NUL-terminated. */
 
-u8 process_http(u8 to_srv, struct packet_flow* f) {
+uint8_t process_http(uint8_t to_srv, struct packet_flow* f) {
 
   /* Already decided this flow is not worth tracking? */
 
@@ -1223,9 +1223,9 @@ u8 process_http(u8 to_srv, struct packet_flow* f) {
 
   if (to_srv) {
 
-    u8* pay = f->request;
-    u8 can_get_more = (f->req_len < MAX_FLOW_DATA);
-    u32 off;
+    uint8_t* pay = f->request;
+    uint8_t can_get_more = (f->req_len < MAX_FLOW_DATA);
+    uint32_t off;
 
     /* Request done, but pending response? */
 
@@ -1233,8 +1233,8 @@ u8 process_http(u8 to_srv, struct packet_flow* f) {
 
     if (!f->in_http) {
 
-      u8 chr;
-      u8* sig_at;
+      uint8_t chr;
+      uint8_t* sig_at;
 
       /* Ooh, new flow! */
 
@@ -1323,9 +1323,9 @@ u8 process_http(u8 to_srv, struct packet_flow* f) {
 
   } else {
 
-    u8* pay = f->response;
-    u8 can_get_more = (f->resp_len < MAX_FLOW_DATA);
-    u32 off;
+    uint8_t* pay = f->response;
+    uint8_t can_get_more = (f->resp_len < MAX_FLOW_DATA);
+    uint32_t off;
 
     /* Response before request? Bail out. */
 
@@ -1336,7 +1336,7 @@ u8 process_http(u8 to_srv, struct packet_flow* f) {
 
     if (!f->http_gotresp1) {
 
-      u8 chr;
+      uint8_t chr;
 
       if (f->resp_len < 13) return can_get_more;
 
