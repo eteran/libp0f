@@ -58,7 +58,7 @@ static int16_t detect_win_multi(struct tcp_sig* ts, uint8_t* use_mtu, uint16_t s
 #define RET_IF_DIV(_div, _use_mtu, _desc) do { \
     if ((_div) && !(win % (_div))) { \
       *use_mtu = (_use_mtu); \
-      DEBUG("[#] Window size %u is a multiple of %s [%u].\n", win, _desc, _div); \
+      DEBUG("[#] Window size %u is a multiple of %s [%lu].\n", win, _desc, (uint64_t)_div); \
       return win / (_div); \
     } \
   } while (0)
@@ -1116,19 +1116,19 @@ static void score_nat(uint8_t to_srv, struct tcp_sig* sig, struct packet_flow* f
       if (ts_diff > max_ts && (ms_diff >= TSTAMP_GRACE || ~ts_diff > max_ts)) {
 
         DEBUG("[#] Dodgy timestamp progression across signatures (%d "
-              "in %llu ms).\n", ts_diff, ms_diff);
+              "in %lu ms).\n", ts_diff, ms_diff);
         score += 4;
         reason |= NAT_TS;
 
       } else {
 
-        DEBUG("[#] Timestamp consistent across signatures (%d in %llu ms), " 
+        DEBUG("[#] Timestamp consistent across signatures (%d in %lu ms), " 
               "reducing score.\n", ts_diff, ms_diff);
         score /= 2;
 
       }
 
-    } else DEBUG("[#] Timestamps available, but with bad interval (%llu ms).\n",
+    } else DEBUG("[#] Timestamps available, but with bad interval (%lu ms).\n",
                  ms_diff);
 
   }
@@ -1291,7 +1291,7 @@ void check_ts_tcp(uint8_t to_srv, struct packet_data* pk, struct packet_flow* f)
 
     }
 
-    DEBUG("[#] Bad %s TS frequency: %.02f Hz (%d ticks in %llu ms).\n",
+    DEBUG("[#] Bad %s TS frequency: %.02f Hz (%d ticks in %lu ms).\n",
           to_srv ? "client" : "server", ffreq, ts_diff, ms_diff);
 
     return;
