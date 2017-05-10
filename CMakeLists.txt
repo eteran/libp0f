@@ -6,6 +6,12 @@ if(CMAKE_BUILD_TYPE EQUAL "Debug")
 	add_definitions(-DDEBUG_BUILD)
 endif()
 
+set(P0F_MAJOR_VERSION "3")
+set(P0F_MINOR_VERSION "09")
+set(P0F_PATCH_VERSION "b")
+set(P0F_VERSION \"${P0F_MAJOR_VERSION}.${P0F_MINOR_VERSION}${P0F_PATCH_VERSION}\")
+
+
 set(p0f_SOURCES
 	alloc-inl.h
 	api.c
@@ -37,6 +43,6 @@ set_property(TARGET p0f PROPERTY C_EXTENSIONS Off)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 
-add_definitions(-DVERSION="3.09b" -DDEBUG_BUILD -D_DEFAULT_SOURCE)
+add_definitions(-DVERSION=${P0F_VERSION} -DDEBUG_BUILD -D_DEFAULT_SOURCE)
 
 target_link_libraries(p0f pcap)
