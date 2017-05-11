@@ -1444,10 +1444,17 @@ void add_nat_score(uint8_t to_srv, struct packet_flow* f, uint16_t reason, uint8
     case 1:         over_0++;
 	}
 #else
-    if(scores[i] >= 6 && scores[i] <= 255) over_5++;
-    if(scores[i] >= 3 && scores[i] <= 5)   over_2++;
-    if(scores[i] >= 2)                     over_1++;
-    if(scores[i] >= 1)                     over_0++;
+
+  	switch (scores[i]) {
+    default: over_5++;	 	 
+	case 5:
+	case 4:
+    case 3:  over_2++;	 	 
+    case 2:  over_1++;	 	 
+    case 1:  over_0++;	 	 
+	case 0:
+		break;
+	}
 #endif
   }
 
