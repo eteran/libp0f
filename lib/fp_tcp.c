@@ -768,11 +768,11 @@ static uint8_t* dump_sig(struct packet_data* pk, struct tcp_sig* ts, uint16_t sy
   uint32_t i;
   uint8_t  dist = guess_dist(pk->ttl);
 
-#define RETF(_par...) do { \
-    int32_t _len = snprintf(NULL, 0, _par); \
+#define RETF(...) do { \
+    int32_t _len = snprintf(NULL, 0, __VA_ARGS__); \
     if (_len < 0) FATAL("Whoa, snprintf() fails?!"); \
     ret = DFL_ck_realloc_kb(ret, rlen + _len + 1); \
-    snprintf((char*)ret + rlen, _len + 1, _par); \
+    snprintf((char*)ret + rlen, _len + 1, __VA_ARGS__); \
     rlen += _len; \
   } while (0)
 

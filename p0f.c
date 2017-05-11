@@ -110,7 +110,7 @@ struct TRK_obj* TRK[ALLOC_BUCKETS];
 uint32_t TRK_cnt[ALLOC_BUCKETS];
 #endif /* DEBUG_BUILD */
 
-#define LOGF(_x...) fprintf(lf, _x)
+#define LOGF(...) fprintf(lf, __VA_ARGS__)
 
 /* Display usage information */
 
