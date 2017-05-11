@@ -26,17 +26,17 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include "../types.h"
-#include "../config.h"
-#include "../alloc-inl.h"
-#include "../debug.h"
-#include "../api.h"
+#include "types.h"
+#include "config.h"
+#include "alloc-inl.h"
+#include "debug.h"
+#include "api.h"
 
 /* Parse IPv4 address into a buffer. */
 
-static void parse_addr4(char* str, u8* ret) {
+static void parse_addr4(char* str, uint8_t* ret) {
 
-  u32 a1, a2, a3, a4;
+  uint32_t a1, a2, a3, a4;
 
   if (sscanf(str, "%u.%u.%u.%u", &a1, &a2, &a3, &a4) != 4)
     FATAL("Malformed IPv4 address.");
@@ -54,10 +54,10 @@ static void parse_addr4(char* str, u8* ret) {
 
 /* Parse IPv6 address into a buffer. */
 
-static void parse_addr6(char* str, u8* ret) {
+static void parse_addr6(char* str, uint8_t* ret) {
 
-  u32 seg = 0;
-  u32 val;
+  uint32_t seg = 0;
+  uint32_t val;
 
   while (*str) {
 
@@ -83,7 +83,7 @@ static void parse_addr6(char* str, u8* ret) {
 
 int main(int argc, char** argv) {
 
-  u8 tmp[128];
+  uint8_t tmp[128];
   struct tm* t;
 
   static struct p0f_api_query q;
@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
 
   static struct sockaddr_un sun;
 
-  s32  sock;
+  int32_t  sock;
   time_t ut;
 
   if (argc != 3) {

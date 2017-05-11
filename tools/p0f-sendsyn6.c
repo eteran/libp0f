@@ -32,19 +32,19 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 
-#include "../types.h"
-#include "../config.h"
-#include "../alloc-inl.h"
-#include "../debug.h"
-#include "../tcp.h"
+#include "types.h"
+#include "config.h"
+#include "alloc-inl.h"
+#include "debug.h"
+#include "tcp.h"
 
 
 /* Do a basic IPv6 TCP checksum. */
 
-static void tcp_cksum(u8* src, u8* dst, struct tcp_hdr* t, u8 opt_len) {
+static void tcp_cksum(uint8_t* src, uint8_t* dst, struct tcp_hdr* t, uint8_t opt_len) {
 
-  u32 sum, i;
-  u8* p;
+  uint32_t sum, i;
+  uint8_t* p;
 
   if (opt_len % 4) FATAL("Packet size not aligned to 4.");
 
@@ -52,7 +52,7 @@ static void tcp_cksum(u8* src, u8* dst, struct tcp_hdr* t, u8 opt_len) {
 
   sum = PROTO_TCP + sizeof(struct tcp_hdr) + opt_len;
 
-  p = (u8*)t;
+  p = (uint8_t*)t;
 
   for (i = 0; i < sizeof(struct tcp_hdr) + opt_len; i += 2, p += 2)
     sum += (*p << 8) + p[1];
@@ -72,10 +72,10 @@ static void tcp_cksum(u8* src, u8* dst, struct tcp_hdr* t, u8 opt_len) {
 
 /* Parse IPv6 address into a buffer. */
 
-static void parse_addr(char* str, u8* ret) { 
+static void parse_addr(char* str, uint8_t* ret) { 
 
-  u32 seg = 0;
-  u32 val;
+  uint32_t seg = 0;
+  uint32_t val;
   
   while (*str) {
 
@@ -112,7 +112,7 @@ static void parse_addr(char* str, u8* ret) {
 /* There are virtually no OSes that do not send MSS. Support for RFC 1323
    and 2018 is not given, so we have to test various combinations here. */
 
-static u8 opt_combos[8][24] = {
+static uint8_t opt_combos[8][24] = {
 
   { MSS(SPECIAL_MSS), NOP, EOL },                           /* 6  */
 
@@ -136,14 +136,14 @@ int main(int argc, char** argv) {
 
   static struct sockaddr_in6 sin;
   char one = 1;
-  s32  sock;
-  u32  i;
+  int32_t  sock;
+  uint32_t  i;
 
-  static u8 work_buf[MIN_TCP6 + 24];
+  static uint8_t work_buf[MIN_TCP6 + 24];
 
   struct ipv6_hdr* ip6 = (struct ipv6_hdr*)work_buf;
   struct tcp_hdr*  tcp = (struct tcp_hdr*)(ip6 + 1);
-  u8 *opts = work_buf + MIN_TCP6;
+  uint8_t *opts = work_buf + MIN_TCP6;
 
 
   if (argc != 4) {

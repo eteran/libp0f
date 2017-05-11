@@ -7,6 +7,7 @@ set(p0f-api_SOURCES
 	fp_tcp.c
 	process.c
 	readfp.c
+	p0f.c
 )
 
 add_library(p0f-api ${p0f-api_SOURCES})

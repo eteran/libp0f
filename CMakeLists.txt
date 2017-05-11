@@ -61,15 +61,13 @@ include_directories(
 )
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
-add_executable(p0f p0f.c)
-
-set_property(TARGET p0f PROPERTY C_STANDARD 99)
-set_property(TARGET p0f PROPERTY C_EXTENSIONS Off)
-
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic -Wunused")
 
 add_definitions(-DVERSION=${P0F_VERSION} -DDEBUG_BUILD -D_DEFAULT_SOURCE)
 
-target_link_libraries(p0f p0f-api)
-
 add_subdirectory (lib)
+add_subdirectory (cli)
+
+if(BUILD_TOOLS)
+	add_subdirectory (tools)
+endif()

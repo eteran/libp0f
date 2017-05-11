@@ -64,53 +64,27 @@
 #  define O_LARGEFILE 0
 #endif /* !O_LARGEFILE */
 
-static uint8_t *use_iface,                   /* Interface to listen on             */
+static uint8_t set_promisc;                  /* Use promiscuous mode?              */
+static pcap_t *pt;                           /* PCAP capture thingy                */
+static uint8_t stop_soon;                    /* Ctrl-C or so pressed?              */
+static uint32_t api_max_conn = API_MAX_CONN; /* Maximum number of API connections  */
+
+static uint8_t 
+          *use_iface,                   /* Interface to listen on             */
           *orig_rule,                   /* Original filter rule               */
-          *switch_user,                 /* Target username                    */
-          *log_file,                    /* Binary log file name               */
+          *switch_user,                 /* Target username                    */          
           *api_sock,                    /* API socket file name               */
           *fp_file;                     /* Location of p0f.fp                 */
 
-uint8_t* read_file;                          /* File to read pcap data from        */
-
-static uint32_t
-  api_max_conn    = API_MAX_CONN;       /* Maximum number of API connections  */
-
-uint32_t
-  max_conn        = MAX_CONN,           /* Connection entry count limit       */
-  max_hosts       = MAX_HOSTS,          /* Host cache entry count limit       */
-  conn_max_age    = CONN_MAX_AGE,       /* Maximum age of a connection entry  */
-  host_idle_limit = HOST_IDLE_LIMIT;    /* Host cache idle timeout            */
-
 static struct api_client *api_cl;       /* Array with API client state        */
-          
-static int32_t null_fd = -1,                /* File descriptor of /dev/null       */
+
+static int32_t 
+           null_fd = -1,                /* File descriptor of /dev/null       */
            api_fd = -1;                 /* API socket descriptor              */
 
-static FILE* lf;                        /* Log file stream                    */
-
-static uint8_t stop_soon;                    /* Ctrl-C or so pressed?              */
-
-uint8_t daemon_mode;                         /* Running in daemon mode?            */
-
-static uint8_t set_promisc;                  /* Use promiscuous mode?              */
-         
-static pcap_t *pt;                      /* PCAP capture thingy                */
-
-int32_t link_type;                          /* PCAP link type                     */
-
-uint32_t hash_seed;                          /* Hash seed                          */
-
-static uint8_t obs_fields;                   /* No of pending observation fields   */
-
-/* Memory allocator data: */
-
-#ifdef DEBUG_BUILD
-struct TRK_obj* TRK[ALLOC_BUCKETS];
-uint32_t TRK_cnt[ALLOC_BUCKETS];
-#endif /* DEBUG_BUILD */
 
 #define LOGF(...) fprintf(lf, __VA_ARGS__)
+
 
 /* Display usage information */
 
@@ -163,270 +137,6 @@ static void usage(void) {
 
 }
 
-
-/* Obtain hash seed: */
-
-static void get_hash_seed(void) {
-
-  int32_t f = open("/dev/urandom", O_RDONLY);
-
-  if (f < 0) PFATAL("Cannot open /dev/urandom for reading.");
-
-#ifndef DEBUG_BUILD
-
-  /* In debug versions, use a constant seed. */
-
-  if (read(f, &hash_seed, sizeof(hash_seed)) != sizeof(hash_seed))
-    FATAL("Cannot read data from /dev/urandom.");
-
-#endif /* !DEBUG_BUILD */
-
-  close(f);
-
-}
-
-
-/* Get rid of unnecessary file descriptors */
-
-static void close_spare_fds(void) {
-
-  int32_t i, closed = 0;
-  DIR* d;
-  struct dirent* de;
-
-  d = opendir("/proc/self/fd");
-
-  if (!d) {
-    /* Best we could do... */
-    for (i = 3; i < 256; i++) 
-      if (!close(i)) closed++;
-    return;
-  }
-
-  while ((de = readdir(d))) {
-    i = atol(de->d_name);
-    if (i > 2 && !close(i)) closed++;
-  }
-
-  closedir(d);
-
-  if (closed)
-    SAYF("[+] Closed %u file descriptor%s.\n", closed, closed == 1 ? "" : "s" );
-
-}
-
-
-/* Create or open log file */
-
-static void open_log(void) {
-
-  struct stat st;
-  int32_t log_fd;
-
-  log_fd = open((char*)log_file, O_WRONLY | O_APPEND | O_NOFOLLOW | O_LARGEFILE);
-
-  if (log_fd >= 0) {
-
-    if (fstat(log_fd, &st)) PFATAL("fstat() on '%s' failed.", log_file);
-
-    if (!S_ISREG(st.st_mode)) FATAL("'%s' is not a regular file.", log_file);
-
-  } else {
-
-    if (errno != ENOENT) PFATAL("Cannot open '%s'.", log_file);
-
-    log_fd = open((char*)log_file, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW,
-                  LOG_MODE);
-
-    if (log_fd < 0) PFATAL("Cannot open '%s'.", log_file);
-
-  }
-
-  if (flock(log_fd, LOCK_EX | LOCK_NB))
-    FATAL("'%s' is being used by another process.", log_file);
-
-  lf = fdopen(log_fd, "a");
-
-  if (!lf) FATAL("fdopen() on '%s' failed.", log_file);
-
-  SAYF("[+] Log file '%s' opened for writing.\n", log_file);
-
-}
-
-
-/* Create and start listening on API socket */
-
-static void open_api(void) {
-
-  int32_t old_umask;
-  uint32_t i;
-
-  struct sockaddr_un u;
-  struct stat st;
-
-  api_fd = socket(PF_UNIX, SOCK_STREAM, 0);
-
-  if (api_fd < 0) PFATAL("socket(PF_UNIX) failed.");
-
-  memset(&u, 0, sizeof(u));
-  u.sun_family = AF_UNIX;
-
-  if (strlen((char*)api_sock) >= sizeof(u.sun_path))
-    FATAL("API socket filename is too long for sockaddr_un (blame Unix).");
-
-  strcpy(u.sun_path, (char*)api_sock);
-
-  /* This is bad, but you can't do any better with standard unix socket
-     semantics today :-( */
-
-  if (!stat((char*)api_sock, &st) && !S_ISSOCK(st.st_mode))
-    FATAL("'%s' exists but is not a socket.", api_sock);
-
-  if (unlink((char*)api_sock) && errno != ENOENT)
-    PFATAL("unlink('%s') failed.", api_sock);
-
-  old_umask = umask(0777 ^ API_MODE);
-
-  if (bind(api_fd, (struct sockaddr*)&u, sizeof(u)))
-    PFATAL("bind() on '%s' failed.", api_sock);
-  
-  umask(old_umask);
-
-  if (listen(api_fd, api_max_conn))
-    PFATAL("listen() on '%s' failed.", api_sock);
-
-  if (fcntl(api_fd, F_SETFL, O_NONBLOCK))
-    PFATAL("fcntl() to set O_NONBLOCK on API listen socket fails.");
-
-  api_cl = DFL_ck_alloc(api_max_conn * sizeof(struct api_client));
-
-  for (i = 0; i < api_max_conn; i++) api_cl[i].fd = -1;
-
-  SAYF("[+] Listening on API socket '%s' (max %u clients).\n",
-       api_sock, api_max_conn);
-
-}
-
-
-/* Open log entry. */
-
-void start_observation(char* keyword, uint8_t field_cnt, uint8_t to_srv,
-                       struct packet_flow* f) {
-
-  if (obs_fields) FATAL("Premature end of observation.");
-
-  if (!daemon_mode) {
-
-    SAYF(".-[ %s/%u -> ", addr_to_str(f->client->addr, f->client->ip_ver),
-         f->cli_port);
-    SAYF("%s/%u (%s) ]-\n|\n", addr_to_str(f->server->addr, f->client->ip_ver),
-         f->srv_port, keyword);
-
-    SAYF("| %-8s = %s/%u\n", to_srv ? "client" : "server", 
-         addr_to_str(to_srv ? f->client->addr :
-         f->server->addr, f->client->ip_ver),
-         to_srv ? f->cli_port : f->srv_port);
-
-  }
-
-  if (log_file) {
-
-    uint8_t tmp[64];
-
-    time_t ut = get_unix_time();
-    struct tm* lt = localtime(&ut);
-
-    strftime((char*)tmp, 64, "%Y/%m/%d %H:%M:%S", lt);
-
-    LOGF("[%s] mod=%s|cli=%s/%u|",tmp, keyword, addr_to_str(f->client->addr,
-         f->client->ip_ver), f->cli_port);
-
-    LOGF("srv=%s/%u|subj=%s", addr_to_str(f->server->addr, f->server->ip_ver),
-         f->srv_port, to_srv ? "cli" : "srv");
-
-  }
-
-  obs_fields = field_cnt;
-
-}
-
-
-/* Add log item. */
-
-void add_observation_field(char* key, uint8_t* value) {
-
-  if (!obs_fields) FATAL("Unexpected observation field ('%s').", key);
-
-  if (!daemon_mode)
-    SAYF("| %-8s = %s\n", key, value ? value : (uint8_t*)"???");
-
-  if (log_file) LOGF("|%s=%s", key, value ? value : (uint8_t*)"???");
-
-  obs_fields--;
-
-  if (!obs_fields) {
-
-    if (!daemon_mode) SAYF("|\n`----\n\n");
-
-    if (log_file) LOGF("\n");
-
-  }
-
-}
-
-
-/* Show PCAP interface list */
-
-static void list_interfaces(void) {
-
-  char pcap_err[PCAP_ERRBUF_SIZE];
-  pcap_if_t *dev;
-  uint8_t i = 0;
-
-  /* There is a bug in several years' worth of libpcap releases that causes it
-     to SEGV here if /sys/class/net is not readable. See http://goo.gl/nEnGx */
-
-  if (access("/sys/class/net", R_OK | X_OK) && errno != ENOENT)
-    FATAL("This operation requires access to /sys/class/net/, sorry.");
-
-  if (pcap_findalldevs(&dev, pcap_err) == -1)
-    FATAL("pcap_findalldevs: %s\n", pcap_err);
-
-  if (!dev) FATAL("Can't find any interfaces. Maybe you need to be root?");
-
-  SAYF("\n-- Available interfaces --\n");
-
-  do {
-
-    pcap_addr_t *a = dev->addresses;
-
-    SAYF("\n%3d: Name        : %s\n", i++, dev->name);
-    SAYF("     Description : %s\n", dev->description ? dev->description : "-");
-
-    /* Let's try to find something we can actually display. */
-
-    while (a && a->addr->sa_family != PF_INET && a->addr->sa_family != PF_INET6)
-      a = a->next;
-
-    if (a) {
-
-      if (a->addr->sa_family == PF_INET)
-        SAYF("     IP address  : %s\n", addr_to_str(((uint8_t*)a->addr) + 4, IP_VER4));
-      else
-        SAYF("     IP address  : %s\n", addr_to_str(((uint8_t*)a->addr) + 8, IP_VER6));
-
-     } else SAYF("     IP address  : (none)\n");
-
-  } while ((dev = dev->next));
-
-  SAYF("\n");
-
-  pcap_freealldevs(dev);
-
-}
-
-
-
 #ifdef __CYGWIN__
 
 /* List PCAP-recognized interfaces */
@@ -454,7 +164,6 @@ static uint8_t* find_interface(int num) {
 }
 
 #endif /* __CYGWIN__ */
-
 
 /* Initialize PCAP capture */
 
@@ -621,116 +330,6 @@ retry_no_vlan:
 
 }
 
-
-/* Drop privileges and chroot(), with some sanity checks */
-
-static void drop_privs(void) {
-
-  struct passwd* pw;
-
-  pw = getpwnam((char*)switch_user);
-
-  if (!pw) FATAL("User '%s' not found.", switch_user);
-
-  if (!strcmp(pw->pw_dir, "/"))
-    FATAL("User '%s' must have a dedicated home directory.", switch_user);
-
-  if (!pw->pw_uid || !pw->pw_gid)
-    FATAL("User '%s' must be non-root.", switch_user);
-
-  if (initgroups(pw->pw_name, pw->pw_gid))
-    PFATAL("initgroups() for '%s' failed.", switch_user);
-
-  if (chdir(pw->pw_dir))
-    PFATAL("chdir('%s') failed.", pw->pw_dir);
-
-  if (chroot(pw->pw_dir))
-    PFATAL("chroot('%s') failed.", pw->pw_dir);
-
-  if (chdir("/"))
-    PFATAL("chdir('/') after chroot('%s') failed.", pw->pw_dir);
-
-  if (!access("/proc/", F_OK) || !access("/sys/", F_OK))
-    FATAL("User '%s' must have a dedicated home directory.", switch_user);
-
-  if (setgid(pw->pw_gid))
-    PFATAL("setgid(%u) failed.", pw->pw_gid);
-
-  if (setuid(pw->pw_uid))
-    PFATAL("setuid(%u) failed.", pw->pw_uid);
-
-  if (getegid() != pw->pw_gid || geteuid() != pw->pw_uid)
-    FATAL("Inconsistent euid / egid after dropping privs.");
-
-  SAYF("[+] Privileges dropped: uid %u, gid %u, root '%s'.\n",
-       pw->pw_uid, pw->pw_gid, pw->pw_dir);
-
-}
-
-
-/* Enter daemon mode. */
-
-static void fork_off(void) {
-
-  int32_t npid;
-
-  fflush(0);
-
-  npid = fork();
-
-  if (npid < 0) PFATAL("fork() failed.");
-
-  if (!npid) {
-
-    /* Let's assume all this is fairly unlikely to fail, so we can live
-       with the parent possibly proclaiming success prematurely. */
-
-    if (dup2(null_fd, 0) < 0) PFATAL("dup2() failed.");
-
-    /* If stderr is redirected to a file, keep that fd and use it for
-       normal output. */
-
-    if (isatty(2)) {
-
-      if (dup2(null_fd, 1) < 0 || dup2(null_fd, 2) < 0)
-        PFATAL("dup2() failed.");
-
-    } else {
-
-      if (dup2(2, 1) < 0) PFATAL("dup2() failed.");
-
-    }
-
-    close(null_fd);
-    null_fd = -1;
-
-    if (chdir("/")) PFATAL("chdir('/') failed.");
-
-    setsid();
-
-  } else {
-
-    SAYF("[+] Daemon process created, PID %u (stderr %s).\n", npid,
-      isatty(2) ? "not kept" : "kept as-is");
-
-    SAYF("\nGood luck, you're on your own now!\n");
-
-    exit(0);
-
-  }
-
-}
-
-
-/* Handler for Ctrl-C and related signals */
-
-static void abort_handler(int sig) {
-  (void)sig;
-  if (stop_soon) exit(1);
-  stop_soon = 1;
-}
-
-
 #ifndef __CYGWIN__
 
 /* Regenerate pollfd data for poll() */
@@ -771,7 +370,6 @@ static uint32_t regen_pfds(struct pollfd* pfds, struct api_client** ctable) {
 }
 
 #endif /* !__CYGWIN__ */
-
 
 /* Event loop! Accepts and dispatches pcap data, API queries, etc. */
 
@@ -1001,7 +599,6 @@ poll_again:
 
 
 /* Simple event loop for processing offline captures. */
-
 static void offline_event_loop(void) {
 
   if (!daemon_mode) 
@@ -1017,6 +614,304 @@ static void offline_event_loop(void) {
 
 }
 
+/* Drop privileges and chroot(), with some sanity checks */
+
+static void drop_privs(void) {
+
+  struct passwd* pw;
+
+  pw = getpwnam((char*)switch_user);
+
+  if (!pw) FATAL("User '%s' not found.", switch_user);
+
+  if (!strcmp(pw->pw_dir, "/"))
+    FATAL("User '%s' must have a dedicated home directory.", switch_user);
+
+  if (!pw->pw_uid || !pw->pw_gid)
+    FATAL("User '%s' must be non-root.", switch_user);
+
+  if (initgroups(pw->pw_name, pw->pw_gid))
+    PFATAL("initgroups() for '%s' failed.", switch_user);
+
+  if (chdir(pw->pw_dir))
+    PFATAL("chdir('%s') failed.", pw->pw_dir);
+
+  if (chroot(pw->pw_dir))
+    PFATAL("chroot('%s') failed.", pw->pw_dir);
+
+  if (chdir("/"))
+    PFATAL("chdir('/') after chroot('%s') failed.", pw->pw_dir);
+
+  if (!access("/proc/", F_OK) || !access("/sys/", F_OK))
+    FATAL("User '%s' must have a dedicated home directory.", switch_user);
+
+  if (setgid(pw->pw_gid))
+    PFATAL("setgid(%u) failed.", pw->pw_gid);
+
+  if (setuid(pw->pw_uid))
+    PFATAL("setuid(%u) failed.", pw->pw_uid);
+
+  if (getegid() != pw->pw_gid || geteuid() != pw->pw_uid)
+    FATAL("Inconsistent euid / egid after dropping privs.");
+
+  SAYF("[+] Privileges dropped: uid %u, gid %u, root '%s'.\n",
+       pw->pw_uid, pw->pw_gid, pw->pw_dir);
+
+}
+
+/* Get rid of unnecessary file descriptors */
+
+static void close_spare_fds(void) {
+
+  int32_t i, closed = 0;
+  DIR* d;
+  struct dirent* de;
+
+  d = opendir("/proc/self/fd");
+
+  if (!d) {
+    /* Best we could do... */
+    for (i = 3; i < 256; i++) 
+      if (!close(i)) closed++;
+    return;
+  }
+
+  while ((de = readdir(d))) {
+    i = atol(de->d_name);
+    if (i > 2 && !close(i)) closed++;
+  }
+
+  closedir(d);
+
+  if (closed)
+    SAYF("[+] Closed %u file descriptor%s.\n", closed, closed == 1 ? "" : "s" );
+
+}
+
+
+
+/* Create or open log file */
+
+static void open_log(void) {
+
+  struct stat st;
+  int32_t log_fd;
+
+  log_fd = open((char*)log_file, O_WRONLY | O_APPEND | O_NOFOLLOW | O_LARGEFILE);
+
+  if (log_fd >= 0) {
+
+    if (fstat(log_fd, &st)) PFATAL("fstat() on '%s' failed.", log_file);
+
+    if (!S_ISREG(st.st_mode)) FATAL("'%s' is not a regular file.", log_file);
+
+  } else {
+
+    if (errno != ENOENT) PFATAL("Cannot open '%s'.", log_file);
+
+    log_fd = open((char*)log_file, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW,
+                  LOG_MODE);
+
+    if (log_fd < 0) PFATAL("Cannot open '%s'.", log_file);
+
+  }
+
+  if (flock(log_fd, LOCK_EX | LOCK_NB))
+    FATAL("'%s' is being used by another process.", log_file);
+
+  lf = fdopen(log_fd, "a");
+
+  if (!lf) FATAL("fdopen() on '%s' failed.", log_file);
+
+  SAYF("[+] Log file '%s' opened for writing.\n", log_file);
+
+}
+
+
+/* Create and start listening on API socket */
+
+static void open_api(void) {
+
+  int32_t old_umask;
+  uint32_t i;
+
+  struct sockaddr_un u;
+  struct stat st;
+
+  api_fd = socket(PF_UNIX, SOCK_STREAM, 0);
+
+  if (api_fd < 0) PFATAL("socket(PF_UNIX) failed.");
+
+  memset(&u, 0, sizeof(u));
+  u.sun_family = AF_UNIX;
+
+  if (strlen((char*)api_sock) >= sizeof(u.sun_path))
+    FATAL("API socket filename is too long for sockaddr_un (blame Unix).");
+
+  strcpy(u.sun_path, (char*)api_sock);
+
+  /* This is bad, but you can't do any better with standard unix socket
+     semantics today :-( */
+
+  if (!stat((char*)api_sock, &st) && !S_ISSOCK(st.st_mode))
+    FATAL("'%s' exists but is not a socket.", api_sock);
+
+  if (unlink((char*)api_sock) && errno != ENOENT)
+    PFATAL("unlink('%s') failed.", api_sock);
+
+  old_umask = umask(0777 ^ API_MODE);
+
+  if (bind(api_fd, (struct sockaddr*)&u, sizeof(u)))
+    PFATAL("bind() on '%s' failed.", api_sock);
+  
+  umask(old_umask);
+
+  if (listen(api_fd, api_max_conn))
+    PFATAL("listen() on '%s' failed.", api_sock);
+
+  if (fcntl(api_fd, F_SETFL, O_NONBLOCK))
+    PFATAL("fcntl() to set O_NONBLOCK on API listen socket fails.");
+
+  api_cl = DFL_ck_alloc(api_max_conn * sizeof(struct api_client));
+
+  for (i = 0; i < api_max_conn; i++) api_cl[i].fd = -1;
+
+  SAYF("[+] Listening on API socket '%s' (max %u clients).\n",
+       api_sock, api_max_conn);
+
+}
+
+/* Handler for Ctrl-C and related signals */
+
+static void abort_handler(int sig) {
+  (void)sig;
+  if (stop_soon) exit(1);
+  stop_soon = 1;
+}
+
+/* Enter daemon mode. */
+
+static void fork_off(void) {
+
+  int32_t npid;
+
+  fflush(0);
+
+  npid = fork();
+
+  if (npid < 0) PFATAL("fork() failed.");
+
+  if (!npid) {
+
+    /* Let's assume all this is fairly unlikely to fail, so we can live
+       with the parent possibly proclaiming success prematurely. */
+
+    if (dup2(null_fd, 0) < 0) PFATAL("dup2() failed.");
+
+    /* If stderr is redirected to a file, keep that fd and use it for
+       normal output. */
+
+    if (isatty(2)) {
+
+      if (dup2(null_fd, 1) < 0 || dup2(null_fd, 2) < 0)
+        PFATAL("dup2() failed.");
+
+    } else {
+
+      if (dup2(2, 1) < 0) PFATAL("dup2() failed.");
+
+    }
+
+    close(null_fd);
+    null_fd = -1;
+
+    if (chdir("/")) PFATAL("chdir('/') failed.");
+
+    setsid();
+
+  } else {
+
+    SAYF("[+] Daemon process created, PID %u (stderr %s).\n", npid,
+      isatty(2) ? "not kept" : "kept as-is");
+
+    SAYF("\nGood luck, you're on your own now!\n");
+
+    exit(0);
+
+  }
+
+}
+
+/* Obtain hash seed: */
+
+static void get_hash_seed(void) {
+
+  int32_t f = open("/dev/urandom", O_RDONLY);
+
+  if (f < 0) PFATAL("Cannot open /dev/urandom for reading.");
+
+#ifndef DEBUG_BUILD
+
+  /* In debug versions, use a constant seed. */
+
+  if (read(f, &hash_seed, sizeof(hash_seed)) != sizeof(hash_seed))
+    FATAL("Cannot read data from /dev/urandom.");
+
+#endif /* !DEBUG_BUILD */
+
+  close(f);
+
+}
+
+/* Show PCAP interface list */
+
+static void list_interfaces(void) {
+
+  char pcap_err[PCAP_ERRBUF_SIZE];
+  pcap_if_t *dev;
+  uint8_t i = 0;
+
+  /* There is a bug in several years' worth of libpcap releases that causes it
+     to SEGV here if /sys/class/net is not readable. See http://goo.gl/nEnGx */
+
+  if (access("/sys/class/net", R_OK | X_OK) && errno != ENOENT)
+    FATAL("This operation requires access to /sys/class/net/, sorry.");
+
+  if (pcap_findalldevs(&dev, pcap_err) == -1)
+    FATAL("pcap_findalldevs: %s\n", pcap_err);
+
+  if (!dev) FATAL("Can't find any interfaces. Maybe you need to be root?");
+
+  SAYF("\n-- Available interfaces --\n");
+
+  do {
+
+    pcap_addr_t *a = dev->addresses;
+
+    SAYF("\n%3d: Name        : %s\n", i++, dev->name);
+    SAYF("     Description : %s\n", dev->description ? dev->description : "-");
+
+    /* Let's try to find something we can actually display. */
+
+    while (a && a->addr->sa_family != PF_INET && a->addr->sa_family != PF_INET6)
+      a = a->next;
+
+    if (a) {
+
+      if (a->addr->sa_family == PF_INET)
+        SAYF("     IP address  : %s\n", addr_to_str(((uint8_t*)a->addr) + 4, IP_VER4));
+      else
+        SAYF("     IP address  : %s\n", addr_to_str(((uint8_t*)a->addr) + 8, IP_VER6));
+
+     } else SAYF("     IP address  : (none)\n");
+
+  } while ((dev = dev->next));
+
+  SAYF("\n");
+
+  pcap_freealldevs(dev);
+
+}
 
 /* Main entry point */
 
