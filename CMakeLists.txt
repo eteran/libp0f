@@ -95,3 +95,12 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 add_definitions(-DVERSION=${P0F_VERSION} -DDEBUG_BUILD -D_DEFAULT_SOURCE)
 
 target_link_libraries(p0f pcap)
+
+# TODO(eteran): add libs needed for various supported platforms
+#if [ "$OSTYPE" = "cygwin" ]; then
+#  USE_LIBS="-lwpcap $LIBS"
+#elif [ "$OSTYPE" = "solaris" ]; then
+#  USE_LIBS="-lsocket -lnsl $LIBS"
+#else
+#  USE_LIBS="-lpcap $LIBS"
+#fi
