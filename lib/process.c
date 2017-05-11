@@ -926,7 +926,7 @@ static struct host_data* create_host(uint8_t* addr, uint8_t ip_ver) {
 
 static void touch_host(struct host_data* h) {
 
-  CP(h);
+  (void)CP(h);
 
   DEBUG("[#] Refreshing host data: %s\n", addr_to_str(h->addr, h->ip_ver));
 
@@ -934,7 +934,7 @@ static void touch_host(struct host_data* h) {
 
     /* Remove from the the by-age linked list. */
 
-    CP(h->newer);
+    (void)CP(h->newer);
     h->newer->older = h->older;
 
     if (CP(h->older)) h->older->newer = h->newer;
@@ -965,9 +965,9 @@ static void touch_host(struct host_data* h) {
 
 static void destroy_flow(struct packet_flow* f) {
 
-  CP(f);
-  CP(f->client);
-  CP(f->server);
+  (void)CP(f);
+  (void)CP(f->client);
+  (void)CP(f->server);
 
   DEBUG("[#] Destroying flow: %s/%u -> ",
         addr_to_str(f->client->addr, f->client->ip_ver), f->cli_port);
@@ -981,12 +981,12 @@ static void destroy_flow(struct packet_flow* f) {
   if (CP(f->next)) f->next->prev = f->prev;
   
   if (CP(f->prev)) f->prev->next = f->next;
-  else { CP(flow_b[f->bucket]); flow_b[f->bucket] = f->next; }
+  else { (void)CP(flow_b[f->bucket]); flow_b[f->bucket] = f->next; }
 
   /* Remove from the by-age linked list. */
 
   if (CP(f->newer)) f->newer->older = f->older;
-  else { CP(newest_flow); newest_flow = f->older; }
+  else { (void)CP(newest_flow); newest_flow = f->older; }
 
   if (CP(f->older)) f->older->newer = f->newer;
   else flow_by_age = f->newer; 
@@ -1100,8 +1100,8 @@ static struct packet_flow* lookup_flow(struct packet_data* pk, uint8_t* to_srv) 
 
   while (CP(f)) {
 
-    CP(f->client);
-    CP(f->server);
+    (void)CP(f->client);
+    (void)CP(f->server);
 
     if (pk->ip_ver != f->client->ip_ver) goto lookup_next;
 
@@ -1513,7 +1513,7 @@ void verify_tool_class(uint8_t to_srv, struct packet_flow* f, uint32_t* sys, uin
 
   if (to_srv) hd = f->client; else hd = f->server;
 
-  CP(sys);
+  (void)CP(sys);
 
   /* No existing data; although there is perhaps some value in detecting
      app-only conflicts in absence of other info, it's probably OK to just
