@@ -56,33 +56,19 @@ set(HTTP_MAX_SHOW		200 					)
 set(HTTP_MAX_DATE_DIFF  10  					)
 
 include_directories(
-	${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${CMAKE_CURRENT_BINARY_DIR}
 )
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
 set(p0f_SOURCES
-	alloc-inl.h
 	api.c
-	api.h
-	config.h
-	debug.h
 	fp_http.c
-	fp_http.h
 	fp_mtu.c
-	fp_mtu.h
 	fp_tcp.c
-	fp_tcp.h
-	hash.h
-	languages.h
 	p0f.c
-	p0f.h
 	process.c
-	process.h
 	readfp.c
-	readfp.h
-	tcp.h
-	types.h
 )
 
 add_executable(p0f ${p0f_SOURCES})
