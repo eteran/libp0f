@@ -61,17 +61,7 @@ include_directories(
 )
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
-set(p0f_SOURCES
-	api.c
-	fp_http.c
-	fp_mtu.c
-	fp_tcp.c
-	p0f.c
-	process.c
-	readfp.c
-)
-
-add_executable(p0f ${p0f_SOURCES})
+add_executable(p0f p0f.c)
 
 set_property(TARGET p0f PROPERTY C_STANDARD 99)
 set_property(TARGET p0f PROPERTY C_EXTENSIONS Off)
@@ -80,13 +70,6 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 
 add_definitions(-DVERSION=${P0F_VERSION} -DDEBUG_BUILD -D_DEFAULT_SOURCE)
 
-target_link_libraries(p0f pcap)
+target_link_libraries(p0f p0f-api)
 
-# TODO(eteran): add libs needed for various supported platforms
-#if [ "$OSTYPE" = "cygwin" ]; then
-#  USE_LIBS="-lwpcap $LIBS"
-#elif [ "$OSTYPE" = "solaris" ]; then
-#  USE_LIBS="-lsocket -lnsl $LIBS"
-#else
-#  USE_LIBS="-lpcap $LIBS"
-#fi
+add_subdirectory (lib)
