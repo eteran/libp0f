@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "config.h"
 #include "types.h"
@@ -476,13 +477,23 @@ static inline void TRK_ck_free(void* ptr, const char* file,
 
 #endif /* ^!DEBUG_BUILD */
 
-#define alloc_printf(...) ({ \
-    uint8_t* _tmp; \
-    int32_t _len = snprintf(NULL, 0, __VA_ARGS__); \
-    if (_len < 0) FATAL("Whoa, snprintf() fails?!"); \
-    _tmp = ck_alloc(_len + 1); \
-    snprintf((char*)_tmp, _len + 1, __VA_ARGS__); \
-    _tmp; \
-  })
+
+static inline uint8_t *alloc_printf(const char *fmt, ...) {
+	uint8_t* _tmp; 
+	
+	va_list ap;
+	va_start(ap, fmt);
+	int32_t _len = vsnprintf(NULL, 0, fmt, ap); 
+	va_end(ap);
+	
+	if (_len < 0) FATAL("Whoa, vsnprintf() fails?!"); 
+		_tmp = ck_alloc(_len + 1); 
+	
+	va_start(ap, fmt);
+	vsnprintf((char*)_tmp, _len + 1, fmt, ap); 
+	va_end(ap);
+	
+	return _tmp; 
+}
 
 #endif /* ! _HAVE_ALLOC_INL_H */
