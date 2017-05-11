@@ -1301,7 +1301,7 @@ void check_ts_tcp(uint8_t to_srv, struct packet_data* pk, struct packet_flow* f)
   freq = ffreq;
 
   /* Round the frequency neatly. */
-
+#if 0
   switch (freq) {
 
     case 0:           freq = 1; break;
@@ -1312,6 +1312,14 @@ void check_ts_tcp(uint8_t to_srv, struct packet_data* pk, struct packet_flow* f)
     default:          freq = (freq + 67) / 100 * 100; break;
 
   }
+#else
+    if(freq ==  0)                       { freq = 1; }
+    else if(freq >= 1   && freq <= 10)   { }
+    else if(freq >= 11  && freq <= 50)   { freq = (freq + 3) / 5 * 5; }
+    else if(freq >= 51  && freq <= 100)  { freq = (freq + 7) / 10 * 10; }
+    else if(freq >= 101 && freq <= 500)  { freq = (freq + 33) / 50 * 50; }
+    else                                 { freq = (freq + 67) / 100 * 100; }
+#endif
 
   if (to_srv) f->cli_tps = freq; else f->srv_tps = freq;
 
