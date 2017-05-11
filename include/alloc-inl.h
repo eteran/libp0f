@@ -35,6 +35,7 @@
 #define ALLOC_C(_ptr) (((uint16_t*)(_ptr))[-3])
 #define ALLOC_S(_ptr) (((uint32_t*)(_ptr))[-1])
 
+#if 0
 #define CHECK_PTR(_p) do { \
     if ((_p) && ALLOC_C(_p) != ALLOC_MAGIC) {\
       if (ALLOC_C(_p) == ALLOC_MAGIC_F) \
@@ -43,13 +44,26 @@
         ABORT("Bad alloc canary."); \
     } \
   } while (0)
-
-
+  
 #define CHECK_PTR_EXPR(_p) ({ \
     __typeof__ (_p) _tmp = (_p); \
     CHECK_PTR(_tmp); \
     _tmp; \
   })
+#else
+static inline void CHECK_PTR(void *_p) {
+	if ((_p) && ALLOC_C(_p) != ALLOC_MAGIC) {
+		if (ALLOC_C(_p) == ALLOC_MAGIC_F) 
+			ABORT("Use after free."); 
+		else 
+			ABORT("Bad alloc canary."); 
+	}
+}
+
+#define CHECK_PTR_EXPR(_p) (CHECK_PTR(_p), _p)
+#endif
+
+
 
 #ifdef CHECK_UAF
 #  define CP(_p) CHECK_PTR_EXPR(_p)
