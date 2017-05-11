@@ -66,7 +66,7 @@ add_executable(p0f p0f.c)
 set_property(TARGET p0f PROPERTY C_STANDARD 99)
 set_property(TARGET p0f PROPERTY C_EXTENSIONS Off)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic")
 
 add_definitions(-DVERSION=${P0F_VERSION} -DDEBUG_BUILD -D_DEFAULT_SOURCE)
 
