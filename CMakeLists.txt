@@ -65,7 +65,7 @@ include_directories(
 )
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic -Wunused")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic -Wunused -W -Wall -Wno-format-zero-length -Wno-sign-compare")
 
 add_definitions(-DVERSION=${P0F_VERSION} -D_DEFAULT_SOURCE)
 
