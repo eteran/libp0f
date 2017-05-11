@@ -2,6 +2,10 @@ cmake_minimum_required (VERSION 3.0)
 
 project(p0f)
 
+if(NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
+endif()
+
 if(CMAKE_BUILD_TYPE EQUAL "Debug")
 	add_definitions(-DDEBUG_BUILD)
 endif()
@@ -63,7 +67,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DI
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic -Wunused")
 
-add_definitions(-DVERSION=${P0F_VERSION} -DDEBUG_BUILD -D_DEFAULT_SOURCE)
+add_definitions(-DVERSION=${P0F_VERSION} -D_DEFAULT_SOURCE)
 
 add_subdirectory (lib)
 add_subdirectory (cli)
