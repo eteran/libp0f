@@ -20,7 +20,7 @@
 /* Default location of p0f.fp: */
 
 #ifndef FP_FILE
-#cmakedefine FP_FILE @FP_FILE@
+#cmakedefine FP_FILE "@FP_FILE@"
 #endif /* !FP_FILE */
 
 /* Initial permissions on log files: */
@@ -63,7 +63,7 @@
 
 /* Detect use-after-free, at the expense of some performance cost: */
 
-#cmakedefine CHECK_UAF @CHECK_UAF@
+#cmakedefine01 CHECK_UAF
 
 /************************
  * Really obscure stuff *
@@ -155,7 +155,7 @@
 /* Non-alphanumeric chars to permit in OS names. This is to allow 'sys' syntax
    to be used unambiguously, yet allow some freedom: */
 
-#cmakedefine NAME_CHARS @NAME_CHARS@
+#cmakedefine NAME_CHARS "@NAME_CHARS@"
 
 /* Special window size and MSS used by p0f-sendsyn, and detected by p0f: */
 
