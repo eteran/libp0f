@@ -24,3 +24,5 @@ target_link_libraries(p0f-api pcap)
 #else
 #  USE_LIBS="-lpcap $LIBS"
 #fi
+
+set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR})
