@@ -218,6 +218,8 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const uint8_t* data
 
   uint8_t* opt_end;
 
+  (void)junk;
+
   packet_cnt++;
   
   cur_time = (struct timeval*)&hdr->ts;

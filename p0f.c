@@ -725,6 +725,7 @@ static void fork_off(void) {
 /* Handler for Ctrl-C and related signals */
 
 static void abort_handler(int sig) {
+  (void)sig;
   if (stop_soon) exit(1);
   stop_soon = 1;
 }
