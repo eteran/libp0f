@@ -753,7 +753,7 @@ static void packet_to_sig(struct packet_data* pk, struct tcp_sig* ts) {
   ts->fuzzy       = 0;
   ts->dist        = 0;
 
-};
+}
 
 
 /* Dump unknown signature. */
