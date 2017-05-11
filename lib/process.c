@@ -1433,12 +1433,22 @@ void add_nat_score(uint8_t to_srv, struct packet_flow* f, uint16_t reason, uint8
 
   if (!score) return;
 
-  for (i = 0; i < NAT_SCORES; i++) switch (scores[i]) {
+  for (i = 0; i < NAT_SCORES; i++) {
+#if 0
+  	switch (scores[i]) {
     case 6 ... 255: over_5++;
     case 3 ... 5:   over_2++;
     case 2:         over_1++;
     case 1:         over_0++;
+	}
+#else
+    if(scores[i] >= 6 && scores[i] <= 255) over_5++;
+    if(scores[i] >= 3 && scores[i] <= 5)   over_2++;
+    if(scores[i] >= 2)                     over_1++;
+    if(scores[i] >= 1)                     over_0++;
+#endif
   }
+
 
   if (over_5 > 2 || over_2 > 4 || over_1 > 6 || over_0 > 8) {
 
@@ -1464,8 +1474,8 @@ void add_nat_score(uint8_t to_srv, struct packet_flow* f, uint16_t reason, uint8
 
   *rptr = 0;
 
-#define REAF(_par...) do { \
-    rptr += sprintf((char*)rptr, _par); \
+#define REAF(...) do { \
+    rptr += sprintf((char*)rptr, __VA_ARGS__); \
   } while (0) 
 
   if (reason & NAT_APP_SIG)  REAF(" app_vs_os");
