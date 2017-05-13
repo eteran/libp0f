@@ -14,8 +14,10 @@ as strict ANSI C99. (The only caveat so far is that `pcap.h` still depends
 on some BSD types, I plan to find a good way to handle this at some point 
 while still targetting more portability).
 
-Additional efforts will be made to seperate out the application driving logic 
+Additional efforts have be made to seperate out the application driving logic 
 from the core logic, so that the core can be used as a library in existing
-applications.
+applications. Building this source tree will result in a library file and an
+executable, which is functionally equivalent to the original p0f.
 
-Please see the original README which has been maintained in this codebase as is.
+Please see the original README which has been preserved in this codebase as is
+in the docs directory.
