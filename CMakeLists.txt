@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.0)
 
-project(p0f)
+project(p0f C)
 
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
